@@ -1,0 +1,11 @@
+# https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md
+openapi: 3.0.3
+info:
+  title: API
+  version: 0.1.0
+
+paths:
+  /users:
+    $ref: './users.yml#/paths/~1users'
+  /users/{userId}:
+    $ref: './users.yml#/paths/~1users~1{userId}'

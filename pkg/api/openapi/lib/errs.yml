@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: Common Error Components
+  version: 0.1.0
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        code:
+          type: string
+        error:
+          type: string
+          example: resource not found
+
+    ResourceConflictError:
+      type: object
+      required: [code, error]
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - properties:
+            code:
+              type: string
+              enum: [resource_exists]
+              example: resource_exists
+
+    IdempotencyConflictError:
+      type: object
+      required: [code, error]
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - properties:
+            code:
+              type: string
+              enum: [idempotency_conflict]
+              example: idempotency_conflict
+
+  responses:
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: |
+        Conflict. Possible causes:
+        - `resource_exists` — resource already exists
+        - `idempotency_conflict` — a request with the same Idempotency-Key is in flight
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/ResourceConflictError'
+              - $ref: '#/components/schemas/IdempotencyConflictError'
+            discriminator:
+              propertyName: code
+              mapping:
+                resource_exists: '#/components/schemas/ResourceConflictError'
+                idempotency_conflict: '#/components/schemas/IdempotencyConflictError'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

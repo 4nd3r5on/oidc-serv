@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info:
+  title: Common Components
+  version: 0.1.0
+
+components:
+  headers:
+    IdempotencyKey:
+      description: |
+        Client-generated UUIDv7 used to safely retry mutating requests
+        without risk of duplicate operations.
+        
+        The server caches the response for a completed request and returns
+        it as-is for any retry carrying the same key, without re-executing
+        the operation.
+        
+        - **Required on:** POST, PATCH (any state-mutating endpoint)
+        - **Format:** UUIDv7 — time-ordered, e.g. `10c69a4b-9fef-41d7-8aaa-2b44935e8e02`
+        - **TTL:** server retains cached responses for 1 hour
+        
+        If a request arrives with a key that matches an in-flight request,
+        the server returns `409 Conflict` to signal the original is already received.
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 10c69a4b-9fef-41d7-8aaa-2b44935e8e02
+
+  parameters:
+    IdempotencyKeyParam:
+      name: Idempotency-Key
+      in: header
+      description: See `IdempotencyKey` header definition in components/headers.
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 10c69a4b-9fef-41d7-8aaa-2b44935e8e02

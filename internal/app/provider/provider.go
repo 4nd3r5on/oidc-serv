@@ -1,16 +1,15 @@
-// Package app provides application layer orchestration
-package app
+// Package provider provides wrapping on top of [provider.Provider]
+// providing app-specific functionality and helpers
+package provider
 
 import (
 	"context"
 	"net/http"
 	"strings"
 
-	"github.com/4nd3r5on/oidc-serv/internal/app/users"
 	"github.com/google/uuid"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"github.com/luikyv/go-oidc/pkg/provider"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // StorageConfig groups the infrastructure implementations that back
@@ -24,24 +23,27 @@ type StorageConfig struct {
 	LogoutSessions LogoutSessionRepo
 }
 
-// Service wires the OIDC provider with application domain logic.
-type Service struct {
+type Provider struct {
 	*provider.Provider
-	users users.Repository
+	users Users
 }
 
-// New creates a Service and applies storage backends and domain callbacks
+// New creates a Provider and applies storage backends and domain callbacks
 // to the given provider.
-func New(op *provider.Provider, userRepo users.Repository, store StorageConfig) (*Service, error) {
-	svc := &Service{Provider: op, users: userRepo}
+func New(
+	op *provider.Provider,
+	store StorageConfig,
+	users Users,
+) (*Provider, error) {
+	svc := &Provider{Provider: op, users: users}
 	return svc, op.WithOptions(svc.providerOpts(store)...)
 }
 
-func (s *Service) providerOpts(store StorageConfig) []provider.Option {
+func (p *Provider) providerOpts(store StorageConfig) []provider.Option {
 	opts := []provider.Option{
-		provider.WithIDTokenClaims(s.idTokenClaims),
-		provider.WithUserInfoClaims(s.userInfoClaims),
-		provider.WithPolicies(s.authnPolicy()),
+		provider.WithIDTokenClaims(p.idTokenClaims),
+		provider.WithUserInfoClaims(p.userInfoClaims),
+		provider.WithPolicies(p.authnPolicy()),
 	}
 
 	if store.Clients != nil {
@@ -63,28 +65,24 @@ func (s *Service) providerOpts(store StorageConfig) []provider.Option {
 	return opts
 }
 
-func (s *Service) authnPolicy() goidc.AuthnPolicy {
+func (p *Provider) authnPolicy() goidc.AuthnPolicy {
 	return goidc.NewPolicy(
 		"password",
 		func(_ *http.Request, _ *goidc.Client, _ *goidc.AuthnSession) bool { return true },
-		s.authenticate,
+		p.authenticate,
 	)
 }
 
 // authenticate validates username/password credentials submitted via form values.
-func (s *Service) authenticate(_ http.ResponseWriter, r *http.Request, session *goidc.AuthnSession) (goidc.Status, error) {
+func (p *Provider) authenticate(_ http.ResponseWriter, r *http.Request, session *goidc.AuthnSession) (goidc.Status, error) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if username == "" || password == "" {
 		return goidc.StatusFailure, nil
 	}
 
-	user, err := s.users.ByUsername(r.Context(), username)
+	user, err := p.users.MatchUserPass(r.Context(), username, password)
 	if err != nil {
-		return goidc.StatusFailure, nil
-	}
-
-	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(password)); err != nil {
 		return goidc.StatusFailure, nil
 	}
 
@@ -94,17 +92,17 @@ func (s *Service) authenticate(_ http.ResponseWriter, r *http.Request, session *
 }
 
 // idTokenClaims returns extra claims for the ID token.
-func (s *Service) idTokenClaims(ctx context.Context, grant *goidc.Grant) map[string]any {
-	return s.coreClaims(ctx, grant)
+func (p *Provider) idTokenClaims(ctx context.Context, grant *goidc.Grant) map[string]any {
+	return p.coreClaims(ctx, grant)
 }
 
 // userInfoClaims returns extra claims for the userinfo endpoint.
-func (s *Service) userInfoClaims(ctx context.Context, grant *goidc.Grant) map[string]any {
-	return s.coreClaims(ctx, grant)
+func (p *Provider) userInfoClaims(ctx context.Context, grant *goidc.Grant) map[string]any {
+	return p.coreClaims(ctx, grant)
 }
 
 // coreClaims returns username and locale claims when the "core" scope was granted.
-func (s *Service) coreClaims(ctx context.Context, grant *goidc.Grant) map[string]any {
+func (p *Provider) coreClaims(ctx context.Context, grant *goidc.Grant) map[string]any {
 	if !strings.Contains(grant.Scopes, "core") {
 		return nil
 	}
@@ -114,7 +112,7 @@ func (s *Service) coreClaims(ctx context.Context, grant *goidc.Grant) map[string
 		return nil
 	}
 
-	user, err := s.users.ByID(ctx, userID)
+	user, err := p.users.ByID(ctx, userID)
 	if err != nil {
 		return nil
 	}

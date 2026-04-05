@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	appprovider "github.com/4nd3r5on/oidc-serv/internal/app/provider"
 	"github.com/4nd3r5on/oidc-serv/internal/config"
 	"github.com/4nd3r5on/oidc-serv/internal/keymanager"
 	"github.com/luikyv/go-oidc/pkg/goidc"
@@ -37,7 +38,10 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
-	jwtConfig := resolveJWTConfig(*jwtConfigPath)
+	jwtConfig, err := resolveJWTConfig(*jwtConfigPath, "")
+	if err != nil {
+		log.Fatalf("failed to resolve JWT config: %v", err)
+	}
 	jwk := goidc.JSONWebKey{
 		Algorithm: jwtConfig.Algorithm,
 		KeyID:     "key_id", // TODO: Change
@@ -72,6 +76,16 @@ func main() {
 		},
 	)
 
+	// TODO: Init users APP Layer
+	// TODO: Init storage
+
+	appProvider, err := appprovider.New(op, appprovider.StorageConfig{}, nil)
+	if err != nil {
+		log.Fatalf(
+			"failed to init app layer provider wrapper %v", err,
+		)
+	}
+
 	mux := http.NewServeMux()
 
 	// TODO: Init API Hanlders
@@ -79,7 +93,7 @@ func main() {
 
 	apiPrefix := "/api/v1/"
 	mux.Handle(apiPrefix, http.StripPrefix(apiPrefix, nil))
-	mux.Handle("/", op.Handler())
+	mux.Handle("/", appProvider.Handler())
 	httpHandler := cors.AllowAll().Handler(mux)
 
 	server := &http.Server{

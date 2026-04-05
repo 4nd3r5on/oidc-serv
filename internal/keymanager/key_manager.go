@@ -44,8 +44,5 @@ func GetSupportedAlgorithms() []string {
 	return dst
 }
 
-func Generate() {
-}
-
 func Read(config *Config) {
 }

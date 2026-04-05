@@ -8,6 +8,13 @@ paths:
     get:
       operationId: listUsers
       summary: List users
+      description: |
+        Returns a paginated list of user accounts.
+
+        **Consumer note:** the default `users.Repository` interface does not
+        include a list/pagination method. The handler implementation must use
+        an extended repository interface that exposes a list operation with
+        `limit`/`offset` support.
       tags: [Users]
       parameters:
         - name: limit
@@ -38,6 +45,13 @@ paths:
     post:
       operationId: createUser
       summary: Create a user
+      description: |
+        Creates a new user account. The `password` field is accepted in plain
+        text and stored as a bcrypt hash; it is never returned in responses.
+
+        **Consumer note:** idempotency deduplication requires a cache/store
+        keyed by `Idempotency-Key`. The default implementation does not
+        include this store; consumers must provide it.
       tags: [Users]
       parameters:
         - $ref: './lib/idempotency.yml#/components/parameters/IdempotencyKeyParam'
@@ -68,6 +82,7 @@ paths:
     get:
       operationId: getUser
       summary: Get a user by ID
+      description: Looks up a user by UUID using `users.Repository.ByID`.
       tags: [Users]
       responses:
         '200':
@@ -84,6 +99,13 @@ paths:
     patch:
       operationId: updateUser
       summary: Partially update a user
+      description: |
+        Updates one or more fields of an existing user. Uses
+        `users.Repository.Save` (upsert semantics on the same ID).
+
+        **Consumer note:** idempotency deduplication requires a cache/store
+        keyed by `Idempotency-Key`. The default implementation does not
+        include this store; consumers must provide it.
       tags: [Users]
       parameters:
         - $ref: './lib/idempotency.yml#/components/parameters/IdempotencyKeyParam'
@@ -112,6 +134,7 @@ paths:
     delete:
       operationId: deleteUser
       summary: Delete a user
+      description: Removes a user account using `users.Repository.Delete`.
       tags: [Users]
       responses:
         '204':
@@ -134,28 +157,32 @@ components:
 
   schemas:
     User:
+      description: |
+        Represents a user account. Maps to the `users.User` entity.
+        `username` and `locale` are also returned as OIDC claims when the
+        `core` scope is granted (see `app.Service.coreClaims`).
       type: object
-      required: [id, email, name, created_at, updated_at]
+      required: [id, username, locale]
       properties:
         id:
           type: string
           format: uuid
           example: 018e4f3a-1b2c-7d8e-9f0a-b1c2d3e4f5a6
-        email:
+        username:
           type: string
-          format: email
-          example: alice@example.com
-        name:
+          example: alice
+        locale:
+          description: BCP 47 language tag. Exposed as the `locale` OIDC claim.
           type: string
-          example: Alice Smith
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+          example: en-US
 
     UserList:
+      description: |
+        Paginated list of users.
+
+        **Consumer note:** `total` must reflect the full count of matching
+        records, not just the current page. The repository implementation
+        is responsible for returning this count alongside the page of items.
       type: object
       required: [items, total]
       properties:
@@ -165,29 +192,49 @@ components:
             $ref: '#/components/schemas/User'
         total:
           type: integer
-          description: Total number of users matching the query
+          description: Total number of users matching the query.
           example: 42
 
     CreateUserRequest:
       type: object
-      required: [email, name]
+      required: [username, password]
       properties:
-        email:
+        username:
           type: string
-          format: email
-          example: alice@example.com
-        name:
+          example: alice
+        password:
+          description: |
+            Plain-text password. The server stores a bcrypt hash
+            (`users.User.PasswordHash`); this value is never returned.
           type: string
-          example: Alice Smith
+          format: password
+          example: s3cr3t
+        locale:
+          description: |
+            BCP 47 language tag. Defaults to empty string if omitted.
+
+            **Consumer note:** the default `users.User` entity stores locale
+            as a plain string with no validation. Locale format enforcement
+            is left to the consumer's service layer.
+          type: string
+          example: en-US
 
     UpdateUserRequest:
+      description: At least one field must be provided.
       type: object
       minProperties: 1
       properties:
-        email:
+        username:
           type: string
-          format: email
-          example: alice@example.com
-        name:
+          example: alice
+        password:
+          description: |
+            New plain-text password. The server re-hashes and stores it as
+            `users.User.PasswordHash`; this value is never returned.
           type: string
-          example: Alice Smith
+          format: password
+          example: n3ws3cr3t
+        locale:
+          description: BCP 47 language tag.
+          type: string
+          example: en-US

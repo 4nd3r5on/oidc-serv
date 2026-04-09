@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type Exister interface {
+	Exists(ctx context.Context, id uuid.UUID) (bool, error)
+}
+
 type Creator interface {
 	Create(ctx context.Context, opts CreateDBOpts) (uuid.UUID, error)
 }
@@ -21,7 +25,7 @@ type GetterByUsername interface {
 type UpdateDBOpts struct {
 	Username *string
 	Locale   *string
-	Password []byte
+	Password []byte // bcrypt hash, not plaintext
 }
 
 type Updater interface {

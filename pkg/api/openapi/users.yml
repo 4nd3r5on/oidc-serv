@@ -5,56 +5,19 @@ info:
 
 paths:
   /users:
-    get:
-      operationId: listUsers
-      summary: List users
-      description: |
-        Returns a paginated list of user accounts.
-
-        **Consumer note:** the default `users.Repository` interface does not
-        include a list/pagination method. The handler implementation must use
-        an extended repository interface that exposes a list operation with
-        `limit`/`offset` support.
-      tags: [Users]
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-      responses:
-        '200':
-          description: Paginated list of users
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserList'
-        '400':
-          $ref: './lib/errs.yml#/components/responses/BadRequest'
-        '500':
-          $ref: './lib/errs.yml#/components/responses/InternalError'
-
     post:
       operationId: createUser
       summary: Create a user
       description: |
-        Creates a new user account. The `password` field is accepted in plain
-        text and stored as a bcrypt hash; it is never returned in responses.
+        Creates a new user account.
 
-        **Consumer note:** idempotency deduplication requires a cache/store
-        keyed by `Idempotency-Key`. The default implementation does not
-        include this store; consumers must provide it.
+        - `username`: 3–32 characters, letters/digits/underscores only
+        - `password`: minimum 8 characters; stored as a bcrypt hash, never returned
+        - `locale`: BCP 47 language tag; defaults to `en` if omitted
       tags: [Users]
-      parameters:
-        - $ref: './lib/idempotency.yml#/components/parameters/IdempotencyKeyParam'
+      security:
+        - sessionAuth: []
+        - tmbAuth: []
       requestBody:
         required: true
         content:
@@ -67,12 +30,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/CreateUserResponse'
         '400':
           $ref: './lib/errs.yml#/components/responses/BadRequest'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
         '409':
           $ref: './lib/errs.yml#/components/responses/Conflict'
-        '500':
+        default:
           $ref: './lib/errs.yml#/components/responses/InternalError'
 
   /users/{userId}:
@@ -80,10 +45,12 @@ paths:
       - $ref: '#/components/parameters/UserIdParam'
 
     get:
-      operationId: getUser
+      operationId: getUserById
       summary: Get a user by ID
-      description: Looks up a user by UUID using `users.Repository.ByID`.
       tags: [Users]
+      security:
+        - sessionAuth: []
+        - tmbAuth: []
       responses:
         '200':
           description: User found
@@ -91,24 +58,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
         '404':
           $ref: './lib/errs.yml#/components/responses/NotFound'
-        '500':
+        default:
+          $ref: './lib/errs.yml#/components/responses/InternalError'
+
+  /users/by-username/{username}:
+    parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 3
+          maxLength: 32
+
+    get:
+      operationId: getUserByUsername
+      summary: Get a user by username
+      tags: [Users]
+      security:
+        - sessionAuth: []
+        - tmbAuth: []
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
+        '404':
+          $ref: './lib/errs.yml#/components/responses/NotFound'
+        default:
+          $ref: './lib/errs.yml#/components/responses/InternalError'
+
+  /me:
+    get:
+      operationId: getMe
+      summary: Get the authenticated user
+      tags: [Me]
+      security:
+        - sessionAuth: []
+        - tmbAuth: []
+      responses:
+        '200':
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
+        default:
           $ref: './lib/errs.yml#/components/responses/InternalError'
 
     patch:
-      operationId: updateUser
-      summary: Partially update a user
-      description: |
-        Updates one or more fields of an existing user. Uses
-        `users.Repository.Save` (upsert semantics on the same ID).
-
-        **Consumer note:** idempotency deduplication requires a cache/store
-        keyed by `Idempotency-Key`. The default implementation does not
-        include this store; consumers must provide it.
-      tags: [Users]
-      parameters:
-        - $ref: './lib/idempotency.yml#/components/parameters/IdempotencyKeyParam'
+      operationId: updateMe
+      summary: Update the authenticated user's username and/or locale
+      tags: [Me]
+      security:
+        - sessionAuth: []
+        - tmbAuth: []
       requestBody:
         required: true
         content:
@@ -116,32 +130,58 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateUserRequest'
       responses:
-        '200':
-          description: User updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
+        '204':
+          description: Updated
         '400':
           $ref: './lib/errs.yml#/components/responses/BadRequest'
-        '404':
-          $ref: './lib/errs.yml#/components/responses/NotFound'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
         '409':
           $ref: './lib/errs.yml#/components/responses/Conflict'
-        '500':
+        default:
           $ref: './lib/errs.yml#/components/responses/InternalError'
 
     delete:
-      operationId: deleteUser
-      summary: Delete a user
-      description: Removes a user account using `users.Repository.Delete`.
-      tags: [Users]
+      operationId: deleteMe
+      summary: Delete the authenticated user
+      tags: [Me]
+      security:
+        - sessionAuth: []
+        - tmbAuth: []
       responses:
         '204':
-          description: User deleted
-        '404':
-          $ref: './lib/errs.yml#/components/responses/NotFound'
-        '500':
+          description: Deleted
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
+        default:
+          $ref: './lib/errs.yml#/components/responses/InternalError'
+
+  /me/password:
+    patch:
+      operationId: updateMyPassword
+      summary: Change the authenticated user's password
+      description: |
+        Verifies `old_password` against the stored bcrypt hash before applying the change.
+        Returns `401` for both wrong `old_password` and missing authentication,
+        using the same error to prevent information leakage.
+      tags: [Me]
+      security:
+        - sessionAuth: []
+        - tmbAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordRequest'
+      responses:
+        '204':
+          description: Password updated
+        '400':
+          $ref: './lib/errs.yml#/components/responses/BadRequest'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
+        default:
           $ref: './lib/errs.yml#/components/responses/InternalError'
 
 components:
@@ -157,10 +197,7 @@ components:
 
   schemas:
     User:
-      description: |
-        Represents a user account. Maps to the `users.User` entity.
-        `username` and `locale` are also returned as OIDC claims when the
-        `core` scope is granted (see `app.Service.coreClaims`).
+      description: Safe user projection. Never includes the password hash.
       type: object
       required: [id, username, locale]
       properties:
@@ -170,30 +207,22 @@ components:
           example: 018e4f3a-1b2c-7d8e-9f0a-b1c2d3e4f5a6
         username:
           type: string
+          minLength: 3
+          maxLength: 32
           example: alice
         locale:
-          description: BCP 47 language tag. Exposed as the `locale` OIDC claim.
+          description: BCP 47 language tag.
           type: string
           example: en-US
 
-    UserList:
-      description: |
-        Paginated list of users.
-
-        **Consumer note:** `total` must reflect the full count of matching
-        records, not just the current page. The repository implementation
-        is responsible for returning this count alongside the page of items.
+    CreateUserResponse:
       type: object
-      required: [items, total]
+      required: [id]
       properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          description: Total number of users matching the query.
-          example: 42
+        id:
+          type: string
+          format: uuid
+          example: 018e4f3a-1b2c-7d8e-9f0a-b1c2d3e4f5a6
 
     CreateUserRequest:
       type: object
@@ -201,21 +230,18 @@ components:
       properties:
         username:
           type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_]+$'
           example: alice
         password:
-          description: |
-            Plain-text password. The server stores a bcrypt hash
-            (`users.User.PasswordHash`); this value is never returned.
+          description: Plain text; stored as bcrypt hash, never returned.
           type: string
           format: password
-          example: s3cr3t
+          minLength: 8
+          example: s3cr3tpassword
         locale:
-          description: |
-            BCP 47 language tag. Defaults to empty string if omitted.
-
-            **Consumer note:** the default `users.User` entity stores locale
-            as a plain string with no validation. Locale format enforcement
-            is left to the consumer's service layer.
+          description: BCP 47 language tag. Defaults to `en` if omitted.
           type: string
           example: en-US
 
@@ -226,15 +252,24 @@ components:
       properties:
         username:
           type: string
+          minLength: 3
+          maxLength: 32
+          pattern: '^[a-zA-Z0-9_]+$'
           example: alice
-        password:
-          description: |
-            New plain-text password. The server re-hashes and stores it as
-            `users.User.PasswordHash`; this value is never returned.
-          type: string
-          format: password
-          example: n3ws3cr3t
         locale:
           description: BCP 47 language tag.
           type: string
           example: en-US
+
+    UpdatePasswordRequest:
+      type: object
+      required: [old_password, new_password]
+      properties:
+        old_password:
+          type: string
+          format: password
+          minLength: 8
+        new_password:
+          type: string
+          format: password
+          minLength: 8

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/4nd3r5on/oidc-serv/internal/app/users"
-	"github.com/google/uuid"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 )
 
@@ -19,7 +18,4 @@ type (
 	LogoutSessionRepo = goidc.LogoutSessionManager
 )
 
-type Users interface {
-	ByID(context.Context, uuid.UUID) (*users.User, error)
-	MatchUserPass(ctx context.Context, username, password string) (*users.User, error)
-}
+type UserPassMatcherFunc func(ctx context.Context, username, password string) (*users.User, error)

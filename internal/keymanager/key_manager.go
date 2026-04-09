@@ -43,6 +43,3 @@ func GetSupportedAlgorithms() []string {
 	}
 	return dst
 }
-
-func Read(config *Config) {
-}

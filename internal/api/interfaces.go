@@ -1,0 +1,27 @@
+package api
+
+import (
+	"context"
+
+	appusers "github.com/4nd3r5on/oidc-serv/internal/app/users"
+	"github.com/google/uuid"
+)
+
+type UserCreator interface {
+	Create(ctx context.Context, opts appusers.CreateOpts) (uuid.UUID, error)
+}
+
+type UserGetterByID interface {
+	Get(ctx context.Context, id uuid.UUID) (*appusers.GetRes, error)
+}
+
+type UserGetterByUsername interface {
+	Get(ctx context.Context, username string) (*appusers.GetRes, error)
+}
+
+type MeService interface {
+	Get(ctx context.Context) (*appusers.GetRes, error)
+	Update(ctx context.Context, opts appusers.UpdateOpts) error
+	Delete(ctx context.Context) error
+	UpdatePassword(ctx context.Context, opts appusers.UpdatePasswordOpts) error
+}

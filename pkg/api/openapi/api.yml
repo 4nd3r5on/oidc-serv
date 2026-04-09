@@ -1,7 +1,7 @@
 # https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md
 openapi: 3.0.3
 info:
-  title: API
+  title: oidc-serv API
   version: 0.1.0
 
 paths:
@@ -9,3 +9,24 @@ paths:
     $ref: './users.yml#/paths/~1users'
   /users/{userId}:
     $ref: './users.yml#/paths/~1users~1{userId}'
+  /users/by-username/{username}:
+    $ref: './users.yml#/paths/~1users~1by-username~1{username}'
+  /me:
+    $ref: './users.yml#/paths/~1me'
+  /me/password:
+    $ref: './users.yml#/paths/~1me~1password'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Session key issued by the login endpoint.
+        Format: `Bearer <session-key>`
+    tmbAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Trust Me Bro — development/internal use only.
+        Format: `Bearer TMB <user-uuid>`

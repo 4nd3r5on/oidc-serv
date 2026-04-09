@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/4nd3r5on/oidc-serv/internal/app/users"
 	"github.com/google/uuid"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"github.com/luikyv/go-oidc/pkg/provider"
@@ -25,7 +26,8 @@ type StorageConfig struct {
 
 type Provider struct {
 	*provider.Provider
-	users Users
+	usersRepo     users.GetterByID
+	matchUserPass UserPassMatcherFunc
 }
 
 // New creates a Provider and applies storage backends and domain callbacks
@@ -33,9 +35,14 @@ type Provider struct {
 func New(
 	op *provider.Provider,
 	store StorageConfig,
-	users Users,
+	usersRepo users.GetterByID,
+	matchUserPass UserPassMatcherFunc,
 ) (*Provider, error) {
-	svc := &Provider{Provider: op, users: users}
+	svc := &Provider{
+		Provider:      op,
+		usersRepo:     usersRepo,
+		matchUserPass: matchUserPass,
+	}
 	return svc, op.WithOptions(svc.providerOpts(store)...)
 }
 
@@ -75,13 +82,14 @@ func (p *Provider) authnPolicy() goidc.AuthnPolicy {
 
 // authenticate validates username/password credentials submitted via form values.
 func (p *Provider) authenticate(_ http.ResponseWriter, r *http.Request, session *goidc.AuthnSession) (goidc.Status, error) {
+	// TODO: May be extended with cookies, jwts or other things
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if username == "" || password == "" {
 		return goidc.StatusFailure, nil
 	}
 
-	user, err := p.users.MatchUserPass(r.Context(), username, password)
+	user, err := p.matchUserPass(r.Context(), username, password)
 	if err != nil {
 		return goidc.StatusFailure, nil
 	}
@@ -112,7 +120,7 @@ func (p *Provider) coreClaims(ctx context.Context, grant *goidc.Grant) map[strin
 		return nil
 	}
 
-	user, err := p.users.ByID(ctx, userID)
+	user, err := p.usersRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil
 	}

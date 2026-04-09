@@ -16,6 +16,12 @@ const (
 	// required
 	// prod, dev, test
 	EnvEnvironment = "ENVIRONMENT"
+	// required
+	EnvDatabaseURL = "DATABASE_URL"
+	// required — 64 hex chars (32 bytes), used for AES-GCM encryption at rest
+	EnvEncryptionKey = "ENCRYPTION_KEY"
+	// required — Redis connection URL, e.g. redis://localhost:6379
+	EnvRedisURL = "REDIS_URL"
 	// optional
 	// :8080
 	// 0.0.0.0:8080

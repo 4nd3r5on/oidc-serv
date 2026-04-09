@@ -9,28 +9,22 @@ import (
 	"os"
 	"time"
 
-	appprovider "github.com/4nd3r5on/oidc-serv/internal/app/provider"
+	internalapi "github.com/4nd3r5on/oidc-serv/internal/api"
 	"github.com/4nd3r5on/oidc-serv/internal/config"
-	"github.com/4nd3r5on/oidc-serv/internal/keymanager"
-	"github.com/luikyv/go-oidc/pkg/goidc"
-	"github.com/luikyv/go-oidc/pkg/provider"
+	genapi "github.com/4nd3r5on/oidc-serv/pkg/api"
+	"github.com/4nd3r5on/oidc-serv/pkg/db"
 	"github.com/rs/cors"
 )
 
 func main() {
-	_ = context.Background()
-	serverAddr := getEnv(config.EnvServerAddr, ":9090")
-	issuer := ""
-	env := config.GetEnvironment()
-	// TODO: Use config path
+	ctx := context.Background()
+
 	jwtConfigPath := flag.String("jwt-cfg", "./jwt_config.yml", "JWT Config file path")
 	flag.Parse()
 
+	env := config.GetEnvironment()
 	if env == config.EnvironmentUnknown {
-		log.Fatalf(
-			"missconfigured or missing required enviromnment variable %s",
-			config.EnvEnvironment,
-		)
+		log.Fatalf("misconfigured or missing required environment variable %s", config.EnvEnvironment)
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -38,69 +32,47 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
-	jwtConfig, err := resolveJWTConfig(*jwtConfigPath, "")
+	encKey := mustLoadEncKey()
+
+	pool := mustConnectDB(ctx)
+	defer pool.Close()
+
+	redisClient := mustConnectRedis()
+	defer redisClient.Close()
+
+	repos := initRepos(ctx, db.New(pool), redisClient, encKey, logger)
+	app := initApp(repos, logger)
+
+	appProvider, err := initProvider(app, repos, *jwtConfigPath, "", logger)
 	if err != nil {
-		log.Fatalf("failed to resolve JWT config: %v", err)
-	}
-	jwk := goidc.JSONWebKey{
-		Algorithm: jwtConfig.Algorithm,
-		KeyID:     "key_id", // TODO: Change
-	}
-	jwtIsSymmetricAlgo := keymanager.Algorithms[jwtConfig.Algorithm].IsSymmetric()
-	if jwtIsSymmetricAlgo {
-		if jwtConfig.SecretKey == nil {
-			// TODO: error
-			panic("err")
-		}
-		jwk.Key = jwtConfig.SecretKey
-	} else {
-		if jwtConfig.SecretKey != nil {
-			jwk.Key = jwtConfig.SecretKey
-		} else if jwtConfig.PublicKey == nil {
-			// TODO: error
-			panic("err")
-		}
-		logger.Warn(
-			"private key not provided for asymmetric algorithm",
-			"algorithm", jwtConfig.Algorithm,
-		)
-		jwk.Key = jwtConfig.PublicKey
+		log.Fatalf("init OIDC provider: %v", err)
 	}
 
-	jwks := goidc.JSONWebKeySet{Keys: []goidc.JSONWebKey{jwk}}
-	op, _ := provider.New(
-		goidc.ProfileOpenID,
-		issuer,
-		func(_ context.Context) (goidc.JSONWebKeySet, error) {
-			return jwks, nil
-		},
-	)
-
-	// TODO: Init users APP Layer
-	// TODO: Init storage
-
-	appProvider, err := appprovider.New(op, appprovider.StorageConfig{}, nil)
+	securityHandler := &internalapi.SecurityHandler{
+		TMB:     app.TMBVerifier,
+		Session: app.SessionVerifier,
+	}
+	handlers := &internalapi.Handlers{
+		Create:        app.CreateUser,
+		GetByID:       app.GetUser,
+		GetByUsername: app.GetUserByUsername,
+		Me:            app.Me,
+	}
+	apiServer, err := genapi.NewServer(handlers, securityHandler)
 	if err != nil {
-		log.Fatalf(
-			"failed to init app layer provider wrapper %v", err,
-		)
+		log.Fatalf("init API server: %v", err)
 	}
 
 	mux := http.NewServeMux()
-
-	// TODO: Init API Hanlders
-	// TODO: Init Security Handlers
-
-	apiPrefix := "/api/v1/"
-	mux.Handle(apiPrefix, http.StripPrefix(apiPrefix, nil))
+	mux.Handle("/api/v1/", http.StripPrefix("/api/v1", apiServer))
 	mux.Handle("/", appProvider.Handler())
-	httpHandler := cors.AllowAll().Handler(mux)
 
 	server := &http.Server{
-		Addr:        serverAddr,
-		Handler:     httpHandler,
+		Addr: getEnv(config.EnvServerAddr, ":9090"),
+		// TODO: Add proper CORS configuration
+		Handler:     cors.AllowAll().Handler(mux),
 		ReadTimeout: 5 * time.Second,
 	}
-	logger.Info("Running server", "addr", serverAddr)
+	logger.Info("running server", "addr", server.Addr)
 	server.ListenAndServe()
 }

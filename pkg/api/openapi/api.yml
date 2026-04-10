@@ -15,6 +15,10 @@ paths:
     $ref: './users.yml#/paths/~1me'
   /me/password:
     $ref: './users.yml#/paths/~1me~1password'
+  /clients:
+    $ref: './clients.yml#/paths/~1clients'
+  /clients/{clientId}:
+    $ref: './clients.yml#/paths/~1clients~1{clientId}'
 
 components:
   securitySchemes:
@@ -30,3 +34,10 @@ components:
       description: |
         Trust Me Bro — development/internal use only.
         Format: `Bearer TMB <user-uuid>`
+    adminKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
+      description: |
+        Static admin API key configured via the `ADMIN_API_KEY` environment variable.
+        Required for all client management endpoints.

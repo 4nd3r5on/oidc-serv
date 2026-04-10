@@ -4,9 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 )
 
 // mapErr translates postgres-specific errors to domain sentinel errors.

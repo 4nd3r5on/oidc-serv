@@ -19,8 +19,8 @@ import (
 // all token IDs from the set and deletes them together with the set itself in
 // a single pipeline.
 const (
-	tokenKeyPrefix      = "token:"
-	grantTokensPrefix   = "grant_tokens:"
+	tokenKeyPrefix    = "token:"
+	grantTokensPrefix = "grant_tokens:"
 )
 
 // TokenRepo is a Redis-backed implementation of [goidc.TokenManager].
@@ -100,7 +100,7 @@ func (r *TokenRepo) DeleteByGrantID(ctx context.Context, grantID string) error {
 	return nil
 }
 
-func tokenKey(id string) string           { return tokenKeyPrefix + id }
+func tokenKey(id string) string            { return tokenKeyPrefix + id }
 func grantTokensKey(grantID string) string { return grantTokensPrefix + grantID }
 
 // tokenTTL returns the duration until the token expires, floored at 1 second.

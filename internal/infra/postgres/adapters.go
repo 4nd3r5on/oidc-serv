@@ -1,11 +1,12 @@
 package postgres
 
 import (
-	"github.com/4nd3r5on/oidc-serv/internal/app/users"
-	"github.com/4nd3r5on/oidc-serv/pkg/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/luikyv/go-oidc/pkg/goidc"
+
+	"github.com/4nd3r5on/oidc-serv/internal/app/users"
+	"github.com/4nd3r5on/oidc-serv/pkg/db"
 )
 
 // toText converts a plain string into a nullable [pgtype.Text].

@@ -8,6 +8,15 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// CreateClient implements createClient operation.
+	//
+	// Creates a new OIDC client.
+	// - `id`: chosen by the caller; must be unique
+	// - `secret`: plaintext secret — generated if omitted; returned **only once**, store securely
+	// - `redirect_uris`: at least one URI is required.
+	//
+	// POST /clients
+	CreateClient(ctx context.Context, req *CreateClientRequest) (CreateClientRes, error)
 	// CreateUser implements createUser operation.
 	//
 	// Creates a new user account.
@@ -17,12 +26,24 @@ type Handler interface {
 	//
 	// POST /users
 	CreateUser(ctx context.Context, req *CreateUserRequest) (CreateUserRes, error)
+	// DeleteClient implements deleteClient operation.
+	//
+	// Delete an OIDC client.
+	//
+	// DELETE /clients/{clientId}
+	DeleteClient(ctx context.Context, params DeleteClientParams) (DeleteClientRes, error)
 	// DeleteMe implements deleteMe operation.
 	//
 	// Delete the authenticated user.
 	//
 	// DELETE /me
 	DeleteMe(ctx context.Context) (DeleteMeRes, error)
+	// GetClientById implements getClientById operation.
+	//
+	// Get an OIDC client by ID.
+	//
+	// GET /clients/{clientId}
+	GetClientById(ctx context.Context, params GetClientByIdParams) (GetClientByIdRes, error)
 	// GetMe implements getMe operation.
 	//
 	// Get the authenticated user.

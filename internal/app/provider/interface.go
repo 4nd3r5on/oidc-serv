@@ -3,8 +3,9 @@ package provider
 import (
 	"context"
 
-	"github.com/4nd3r5on/oidc-serv/internal/app/users"
 	"github.com/luikyv/go-oidc/pkg/goidc"
+
+	"github.com/4nd3r5on/oidc-serv/internal/app/users"
 )
 
 // The following type aliases re-expose the goidc storage contracts so all

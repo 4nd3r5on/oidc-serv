@@ -25,7 +25,7 @@ const (
 
 // TTLCache is an interface for cache where
 // TTL is equal for each object in the cache
-// It's optimised for performance
+// It's optimized for performance
 type TTLCache[ID comparable, ObjT any] interface {
 	GetTTL() time.Duration
 	Len() int
@@ -37,7 +37,7 @@ type TTLCache[ID comparable, ObjT any] interface {
 	// CleanUP
 	NextCleanUP() (ID, time.Time)
 
-	// Run is requred for clean up to work
+	// Run is required for clean up to work
 	// Since CleanUPs happen in order we don't
 	// need to constantly scan expired elements
 	Run(ctx context.Context) error
@@ -79,154 +79,154 @@ func (cache *TTLCacheImpl[ID, Obj]) GetTTL() time.Duration {
 	return cache.ttl
 }
 
-func (c *TTLCacheImpl[ID, Obj]) Len() int {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-	return c.len
+func (cache *TTLCacheImpl[ID, Obj]) Len() int {
+	cache.lock.RLock()
+	defer cache.lock.RUnlock()
+	return cache.len
 }
 
 // unlink removes node from the cache. Doesn't update cache length
-func (c *TTLCacheImpl[ID, Obj]) unlink(n *node[ID, Obj], updateItemsMap bool) {
+func (cache *TTLCacheImpl[ID, Obj]) unlink(n *node[ID, Obj], updateItemsMap bool) {
 	// unlink from list
 	if n.prev != nil {
 		n.prev.next = n.next
 	} else {
 		// n was head
-		c.head = n.next
+		cache.head = n.next
 	}
 
 	if n.next != nil {
 		n.next.prev = n.prev
 	} else {
 		// n was tail
-		c.tail = n.prev
+		cache.tail = n.prev
 	}
 
 	n.prev = nil
 	n.next = nil
 
 	if updateItemsMap {
-		delete(c.items, n.id)
+		delete(cache.items, n.id)
 	}
 }
 
-// unlink adds node to the cache. Doesn't update cache length
-func (c *TTLCacheImpl[ID, Obj]) link(n *node[ID, Obj], updateItemsMap bool) {
-	if c.tail == nil {
-		c.head = n
-		c.tail = n
+// link adds node to the cache. Doesn't update cache length
+func (cache *TTLCacheImpl[ID, Obj]) link(n *node[ID, Obj], updateItemsMap bool) {
+	if cache.tail == nil {
+		cache.head = n
+		cache.tail = n
 	} else {
-		n.prev = c.tail
-		c.tail.next = n
-		c.tail = n
+		n.prev = cache.tail
+		cache.tail.next = n
+		cache.tail = n
 	}
 	if updateItemsMap {
-		c.items[n.id] = n
+		cache.items[n.id] = n
 	}
 }
 
 // Get returns value and true if present and not expired.
 // If the item is expired it will be removed and (zero, false) returned.
-func (c *TTLCacheImpl[ID, Obj]) Get(id ID) (Obj, bool) {
+func (cache *TTLCacheImpl[ID, Obj]) Get(id ID) (Obj, bool) {
 	var zero Obj
 
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-	item, ok := c.items[id]
+	cache.lock.RLock()
+	defer cache.lock.RUnlock()
+	item, ok := cache.items[id]
 	if !ok {
 		return zero, false
 	}
 	return item.value, true
 }
 
-func (c *TTLCacheImpl[ID, Obj]) Delete(id ID) (existed bool) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+func (cache *TTLCacheImpl[ID, Obj]) Delete(id ID) (existed bool) {
+	cache.lock.Lock()
+	defer cache.lock.Unlock()
 
-	n, ok := c.items[id]
+	n, ok := cache.items[id]
 	if !ok {
 		return false
 	}
-	c.unlink(n, true)
-	c.len--
+	cache.unlink(n, true)
+	cache.len--
 
 	return true
 }
 
-func (c *TTLCacheImpl[ID, Obj]) Put(id ID, value Obj, mode PutMode) (bool, time.Time) {
+func (cache *TTLCacheImpl[ID, Obj]) Put(id ID, value Obj, mode PutMode) (bool, time.Time) {
 	now := time.Now()
 
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	cache.lock.Lock()
+	defer cache.lock.Unlock()
 
-	n, exists := c.items[id]
+	n, exists := cache.items[id]
 	if !exists {
-		c.link(&node[ID, Obj]{
+		cache.link(&node[ID, Obj]{
 			id:       id,
 			value:    value,
 			inserted: now,
 		}, true)
-		c.len++
-		c.putCond.Signal()
+		cache.len++
+		cache.putCond.Signal()
 
-		return true, now.Add(c.ttl)
+		return true, now.Add(cache.ttl)
 	}
 
 	switch mode {
 
 	case PutModeKeepExisting:
-		return false, n.inserted.Add(c.ttl)
+		return false, n.inserted.Add(cache.ttl)
 
 	case PutModeReplace:
 		n.value = value
-		return false, n.inserted.Add(c.ttl)
+		return false, n.inserted.Add(cache.ttl)
 
 	case PutModeExtendTTL:
 		// renew TTL
 		n.inserted = now
 
-		if c.tail != n {
-			c.unlink(n, false)
-			c.link(n, false)
+		if cache.tail != n {
+			cache.unlink(n, false)
+			cache.link(n, false)
 		}
 
-		return false, n.inserted.Add(c.ttl)
+		return false, n.inserted.Add(cache.ttl)
 
 	case PutModeNew:
-		c.unlink(n, true)
-		c.link(&node[ID, Obj]{
+		cache.unlink(n, true)
+		cache.link(&node[ID, Obj]{
 			id:       id,
 			value:    value,
 			inserted: now,
 		}, true)
-		return true, now.Add(c.ttl)
+		return true, now.Add(cache.ttl)
 	}
 
 	panic("unreachable")
 }
 
-func (c *TTLCacheImpl[ID, Obj]) Run(ctx context.Context) error {
+func (cache *TTLCacheImpl[ID, Obj]) Run(ctx context.Context) error {
 	for {
-		c.lock.Lock()
+		cache.lock.Lock()
 
 		// wait for items
-		for c.len == 0 {
-			c.putCond.Wait()
+		for cache.len == 0 {
+			cache.putCond.Wait()
 			if ctx.Err() != nil {
-				c.lock.Unlock()
+				cache.lock.Unlock()
 				return ctx.Err()
 			}
 		}
 
 		// determine next expiration
-		n := c.head
-		expireAt := n.inserted.Add(c.ttl)
+		n := cache.head
+		expireAt := n.inserted.Add(cache.ttl)
 		now := time.Now()
 
 		if now.Before(expireAt) {
 			// sleep until next expiration (without holding lock)
 			wait := expireAt.Sub(now)
-			c.lock.Unlock()
+			cache.lock.Unlock()
 
 			select {
 			case <-time.After(wait):
@@ -237,9 +237,9 @@ func (c *TTLCacheImpl[ID, Obj]) Run(ctx context.Context) error {
 		}
 
 		// expired: remove head
-		c.unlink(n, true)
-		c.len--
+		cache.unlink(n, true)
+		cache.len--
 
-		c.lock.Unlock()
+		cache.lock.Unlock()
 	}
 }

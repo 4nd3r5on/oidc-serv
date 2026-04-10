@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 	"github.com/google/uuid"
+
+	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 )
 
 var (
@@ -50,7 +51,7 @@ type ClientData struct {
 	Scopes []string
 }
 
-// Verifier verifies data existance/format validity and returns the client data
+// Verifier verifies data existence/format validity and returns the client data
 type Verifier interface {
 	Verify(ctx context.Context, scheme, token string, scopes []string) (*ClientData, error)
 }
@@ -66,7 +67,7 @@ type Core interface {
 // None implements [Verifier] and [Core] for the [MethodNone]
 type None struct{}
 
-func (None) Verify(ctx context.Context, scheme, token string, scopes []string) (*ClientData, error) {
+func (None) Verify(_ context.Context, _, _ string, scopes []string) (*ClientData, error) {
 	return &ClientData{
 		Method: MethodNone,
 		Scopes: scopes,
@@ -74,8 +75,8 @@ func (None) Verify(ctx context.Context, scheme, token string, scopes []string) (
 }
 
 func (None) Auth(
-	ctx context.Context,
-	clientData *ClientData,
+	_ context.Context,
+	_ *ClientData,
 ) (userID uuid.UUID, authenticated bool, err error) {
 	return uuid.Nil, false, nil
 }

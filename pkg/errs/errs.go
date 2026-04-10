@@ -31,7 +31,7 @@ func IsAny(err error, references ...error) bool {
 }
 
 // Rewrap creates a new error with the given message and transfers the sentinels
-// and response data from from onto it. Use this at security boundaries to
+// and response data from onto it. Use this at security boundaries to
 // replace an internal error message with a user-safe one without losing the
 // HTTP-mapping metadata (status-code sentinels, extra response fields).
 //

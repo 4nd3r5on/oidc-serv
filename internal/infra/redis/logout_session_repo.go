@@ -96,8 +96,8 @@ func (r *LogoutSessionRepo) sessionByID(ctx context.Context, id string) (*goidc.
 	return &session, nil
 }
 
-func logoutPrimaryKey(id string) string           { return logoutPrimaryPrefix + id }
-func logoutCallbackKey(callbackID string) string   { return logoutCallbackPrefix + callbackID }
+func logoutPrimaryKey(id string) string          { return logoutPrimaryPrefix + id }
+func logoutCallbackKey(callbackID string) string { return logoutCallbackPrefix + callbackID }
 
 func logoutTTL(session *goidc.LogoutSession) time.Duration {
 	ttl := time.Until(time.Unix(int64(session.ExpiresAtTimestamp), 0))

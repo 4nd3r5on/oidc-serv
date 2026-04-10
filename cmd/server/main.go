@@ -9,11 +9,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/rs/cors"
+
 	internalapi "github.com/4nd3r5on/oidc-serv/internal/api"
 	"github.com/4nd3r5on/oidc-serv/internal/config"
 	genapi "github.com/4nd3r5on/oidc-serv/pkg/api"
 	"github.com/4nd3r5on/oidc-serv/pkg/db"
-	"github.com/rs/cors"
 )
 
 func main() {
@@ -49,10 +50,15 @@ func main() {
 	}
 
 	securityHandler := &internalapi.SecurityHandler{
-		TMB:     app.TMBVerifier,
-		Session: app.SessionVerifier,
+		TMB:      app.TMBVerifier,
+		Session:  app.SessionVerifier,
+		AdminKey: mustLoadAdminAPIKey(),
 	}
 	handlers := &internalapi.Handlers{
+		ClientCreate: app.CreateClient,
+		ClientGet:    app.GetClient,
+		ClientDelete: app.DeleteClient,
+
 		Create:        app.CreateUser,
 		GetByID:       app.GetUser,
 		GetByUsername: app.GetUserByUsername,
@@ -74,5 +80,5 @@ func main() {
 		ReadTimeout: 5 * time.Second,
 	}
 	logger.Info("running server", "addr", server.Addr)
-	server.ListenAndServe()
+	log.Fatal(server.ListenAndServe())
 }

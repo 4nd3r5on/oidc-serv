@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/4nd3r5on/oidc-serv/internal/app/users"
 	"github.com/google/uuid"
 	"github.com/luikyv/go-oidc/pkg/goidc"
 	"github.com/luikyv/go-oidc/pkg/provider"
+
+	"github.com/4nd3r5on/oidc-serv/internal/app/users"
 )
 
 // StorageConfig groups the infrastructure implementations that back
@@ -109,9 +110,9 @@ func (p *Provider) userInfoClaims(ctx context.Context, grant *goidc.Grant) map[s
 	return p.coreClaims(ctx, grant)
 }
 
-// coreClaims returns username and locale claims when the "core" scope was granted.
+// coreClaims returns preferred_username and locale claims when the "profile" scope was granted.
 func (p *Provider) coreClaims(ctx context.Context, grant *goidc.Grant) map[string]any {
-	if !strings.Contains(grant.Scopes, "core") {
+	if !strings.Contains(grant.Scopes, "profile") {
 		return nil
 	}
 
@@ -126,7 +127,7 @@ func (p *Provider) coreClaims(ctx context.Context, grant *goidc.Grant) map[strin
 	}
 
 	return map[string]any{
-		"username":        user.Username,
-		goidc.ClaimLocale: user.Locale,
+		goidc.ClaimPreferredUsername: user.Username,
+		goidc.ClaimLocale:            user.Locale,
 	}
 }

@@ -2,7 +2,7 @@ package postgres
 
 import "encoding/json"
 
-// marshalJSON serialises v to JSON, returning nil for a nil value or a JSON null result.
+// marshalJSON serializes v to JSON, returning nil for a nil value or a JSON null result.
 func marshalJSON(v any) ([]byte, error) {
 	if v == nil {
 		return nil, nil

@@ -4,6 +4,7 @@ package api
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/go-faster/errors"
 	"github.com/google/uuid"
@@ -12,6 +13,150 @@ import (
 func (s *InternalErrorStatusCode) Error() string {
 	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
 }
+
+type AdminKeyAuth struct {
+	APIKey string
+	Roles  []string
+}
+
+// GetAPIKey returns the value of APIKey.
+func (s *AdminKeyAuth) GetAPIKey() string {
+	return s.APIKey
+}
+
+// GetRoles returns the value of Roles.
+func (s *AdminKeyAuth) GetRoles() []string {
+	return s.Roles
+}
+
+// SetAPIKey sets the value of APIKey.
+func (s *AdminKeyAuth) SetAPIKey(val string) {
+	s.APIKey = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *AdminKeyAuth) SetRoles(val []string) {
+	s.Roles = val
+}
+
+type CreateClientBadRequest ErrorResponse
+
+func (*CreateClientBadRequest) createClientRes() {}
+
+// Ref: #/components/schemas/CreateClientRequest
+type CreateClientRequest struct {
+	ID string `json:"id"`
+	// Plaintext secret. Generated if omitted.
+	Secret                  OptString `json:"secret"`
+	RedirectUris            []url.URL `json:"redirect_uris"`
+	GrantTypes              []string  `json:"grant_types"`
+	ResponseTypes           []string  `json:"response_types"`
+	Scope                   OptString `json:"scope"`
+	TokenEndpointAuthMethod OptString `json:"token_endpoint_auth_method"`
+}
+
+// GetID returns the value of ID.
+func (s *CreateClientRequest) GetID() string {
+	return s.ID
+}
+
+// GetSecret returns the value of Secret.
+func (s *CreateClientRequest) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetRedirectUris returns the value of RedirectUris.
+func (s *CreateClientRequest) GetRedirectUris() []url.URL {
+	return s.RedirectUris
+}
+
+// GetGrantTypes returns the value of GrantTypes.
+func (s *CreateClientRequest) GetGrantTypes() []string {
+	return s.GrantTypes
+}
+
+// GetResponseTypes returns the value of ResponseTypes.
+func (s *CreateClientRequest) GetResponseTypes() []string {
+	return s.ResponseTypes
+}
+
+// GetScope returns the value of Scope.
+func (s *CreateClientRequest) GetScope() OptString {
+	return s.Scope
+}
+
+// GetTokenEndpointAuthMethod returns the value of TokenEndpointAuthMethod.
+func (s *CreateClientRequest) GetTokenEndpointAuthMethod() OptString {
+	return s.TokenEndpointAuthMethod
+}
+
+// SetID sets the value of ID.
+func (s *CreateClientRequest) SetID(val string) {
+	s.ID = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *CreateClientRequest) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetRedirectUris sets the value of RedirectUris.
+func (s *CreateClientRequest) SetRedirectUris(val []url.URL) {
+	s.RedirectUris = val
+}
+
+// SetGrantTypes sets the value of GrantTypes.
+func (s *CreateClientRequest) SetGrantTypes(val []string) {
+	s.GrantTypes = val
+}
+
+// SetResponseTypes sets the value of ResponseTypes.
+func (s *CreateClientRequest) SetResponseTypes(val []string) {
+	s.ResponseTypes = val
+}
+
+// SetScope sets the value of Scope.
+func (s *CreateClientRequest) SetScope(val OptString) {
+	s.Scope = val
+}
+
+// SetTokenEndpointAuthMethod sets the value of TokenEndpointAuthMethod.
+func (s *CreateClientRequest) SetTokenEndpointAuthMethod(val OptString) {
+	s.TokenEndpointAuthMethod = val
+}
+
+// Ref: #/components/schemas/CreateClientResponse
+type CreateClientResponse struct {
+	ID string `json:"id"`
+	// Plaintext client secret — returned only once, store securely.
+	Secret string `json:"secret"`
+}
+
+// GetID returns the value of ID.
+func (s *CreateClientResponse) GetID() string {
+	return s.ID
+}
+
+// GetSecret returns the value of Secret.
+func (s *CreateClientResponse) GetSecret() string {
+	return s.Secret
+}
+
+// SetID sets the value of ID.
+func (s *CreateClientResponse) SetID(val string) {
+	s.ID = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *CreateClientResponse) SetSecret(val string) {
+	s.Secret = val
+}
+
+func (*CreateClientResponse) createClientRes() {}
+
+type CreateClientUnauthorized ErrorResponse
+
+func (*CreateClientUnauthorized) createClientRes() {}
 
 type CreateUserBadRequest ErrorResponse
 
@@ -77,6 +222,19 @@ type CreateUserUnauthorized ErrorResponse
 
 func (*CreateUserUnauthorized) createUserRes() {}
 
+// DeleteClientNoContent is response for DeleteClient operation.
+type DeleteClientNoContent struct{}
+
+func (*DeleteClientNoContent) deleteClientRes() {}
+
+type DeleteClientNotFound ErrorResponse
+
+func (*DeleteClientNotFound) deleteClientRes() {}
+
+type DeleteClientUnauthorized ErrorResponse
+
+func (*DeleteClientUnauthorized) deleteClientRes() {}
+
 // DeleteMeNoContent is response for DeleteMe operation.
 type DeleteMeNoContent struct{}
 
@@ -110,6 +268,14 @@ func (s *ErrorResponse) SetError(val string) {
 
 func (*ErrorResponse) deleteMeRes() {}
 func (*ErrorResponse) getMeRes()    {}
+
+type GetClientByIdNotFound ErrorResponse
+
+func (*GetClientByIdNotFound) getClientByIdRes() {}
+
+type GetClientByIdUnauthorized ErrorResponse
+
+func (*GetClientByIdUnauthorized) getClientByIdRes() {}
 
 type GetUserByIdNotFound ErrorResponse
 
@@ -152,6 +318,103 @@ func (s *InternalErrorStatusCode) SetStatusCode(val int) {
 func (s *InternalErrorStatusCode) SetResponse(val ErrorResponse) {
 	s.Response = val
 }
+
+// OIDC client metadata. Never includes the secret.
+// Ref: #/components/schemas/OIDCClient
+type OIDCClient struct {
+	ID                      string    `json:"id"`
+	RedirectUris            []url.URL `json:"redirect_uris"`
+	GrantTypes              []string  `json:"grant_types"`
+	ResponseTypes           []string  `json:"response_types"`
+	Scope                   string    `json:"scope"`
+	TokenEndpointAuthMethod string    `json:"token_endpoint_auth_method"`
+	// Unix timestamp.
+	CreatedAt int64 `json:"created_at"`
+	// Unix timestamp; 0 means no expiry.
+	ExpiresAt int64 `json:"expires_at"`
+}
+
+// GetID returns the value of ID.
+func (s *OIDCClient) GetID() string {
+	return s.ID
+}
+
+// GetRedirectUris returns the value of RedirectUris.
+func (s *OIDCClient) GetRedirectUris() []url.URL {
+	return s.RedirectUris
+}
+
+// GetGrantTypes returns the value of GrantTypes.
+func (s *OIDCClient) GetGrantTypes() []string {
+	return s.GrantTypes
+}
+
+// GetResponseTypes returns the value of ResponseTypes.
+func (s *OIDCClient) GetResponseTypes() []string {
+	return s.ResponseTypes
+}
+
+// GetScope returns the value of Scope.
+func (s *OIDCClient) GetScope() string {
+	return s.Scope
+}
+
+// GetTokenEndpointAuthMethod returns the value of TokenEndpointAuthMethod.
+func (s *OIDCClient) GetTokenEndpointAuthMethod() string {
+	return s.TokenEndpointAuthMethod
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *OIDCClient) GetCreatedAt() int64 {
+	return s.CreatedAt
+}
+
+// GetExpiresAt returns the value of ExpiresAt.
+func (s *OIDCClient) GetExpiresAt() int64 {
+	return s.ExpiresAt
+}
+
+// SetID sets the value of ID.
+func (s *OIDCClient) SetID(val string) {
+	s.ID = val
+}
+
+// SetRedirectUris sets the value of RedirectUris.
+func (s *OIDCClient) SetRedirectUris(val []url.URL) {
+	s.RedirectUris = val
+}
+
+// SetGrantTypes sets the value of GrantTypes.
+func (s *OIDCClient) SetGrantTypes(val []string) {
+	s.GrantTypes = val
+}
+
+// SetResponseTypes sets the value of ResponseTypes.
+func (s *OIDCClient) SetResponseTypes(val []string) {
+	s.ResponseTypes = val
+}
+
+// SetScope sets the value of Scope.
+func (s *OIDCClient) SetScope(val string) {
+	s.Scope = val
+}
+
+// SetTokenEndpointAuthMethod sets the value of TokenEndpointAuthMethod.
+func (s *OIDCClient) SetTokenEndpointAuthMethod(val string) {
+	s.TokenEndpointAuthMethod = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *OIDCClient) SetCreatedAt(val int64) {
+	s.CreatedAt = val
+}
+
+// SetExpiresAt sets the value of ExpiresAt.
+func (s *OIDCClient) SetExpiresAt(val int64) {
+	s.ExpiresAt = val
+}
+
+func (*OIDCClient) getClientByIdRes() {}
 
 // NewOptResourceConflictErrorCode returns new OptResourceConflictErrorCode with value set to v.
 func NewOptResourceConflictErrorCode(v ResourceConflictErrorCode) OptResourceConflictErrorCode {
@@ -273,8 +536,9 @@ func (s *ResourceConflictError) SetError(val string) {
 	s.Error = val
 }
 
-func (*ResourceConflictError) createUserRes() {}
-func (*ResourceConflictError) updateMeRes()   {}
+func (*ResourceConflictError) createClientRes() {}
+func (*ResourceConflictError) createUserRes()   {}
+func (*ResourceConflictError) updateMeRes()     {}
 
 // Merged schema.
 type ResourceConflictErrorCode string

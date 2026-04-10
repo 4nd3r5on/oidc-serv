@@ -29,7 +29,7 @@ type IssueSession struct {
 	Logger   *slog.Logger
 }
 
-func NewIssueSession(users UserVerifyFunc, sessions Storer, ttl time.Duration, logger *slog.Logger) *IssueSession {
+func NewIssueSession(users UserVerifyFunc, sessions Storer, _ time.Duration, logger *slog.Logger) *IssueSession {
 	if logger == nil {
 		logger = slog.Default()
 	}

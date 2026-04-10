@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/4nd3r5on/oidc-serv/pkg/db"
 	"github.com/luikyv/go-oidc/pkg/goidc"
+
+	infracrypto "github.com/4nd3r5on/oidc-serv/internal/infra/crypto"
+	"github.com/4nd3r5on/oidc-serv/pkg/db"
 )
 
 // clientRecord is the shape stored in the meta JSONB column.
@@ -31,13 +33,13 @@ func NewClientRepo(q *db.Queries, key []byte) *ClientRepo {
 }
 
 // Save upserts a client, encrypting its secret and registration token before
-// writing and serialising all remaining metadata to a JSONB column.
+// writing and serializing all remaining metadata to a JSONB column.
 func (r *ClientRepo) Save(ctx context.Context, c *goidc.Client) error {
-	secretEnc, err := encrypt(r.key, []byte(c.Secret))
+	secretEnc, err := infracrypto.Encrypt(r.key, []byte(c.Secret))
 	if err != nil {
 		return err
 	}
-	regTokenEnc, err := encrypt(r.key, []byte(c.RegistrationToken))
+	regTokenEnc, err := infracrypto.Encrypt(r.key, []byte(c.RegistrationToken))
 	if err != nil {
 		return err
 	}
@@ -67,11 +69,11 @@ func (r *ClientRepo) Client(ctx context.Context, id string) (*goidc.Client, erro
 		return nil, mapErr(err)
 	}
 
-	secretBytes, err := decrypt(r.key, row.SecretEnc)
+	secretBytes, err := infracrypto.Decrypt(r.key, row.SecretEnc)
 	if err != nil {
 		return nil, err
 	}
-	regTokenBytes, err := decrypt(r.key, row.RegistrationTokenEnc)
+	regTokenBytes, err := infracrypto.Decrypt(r.key, row.RegistrationTokenEnc)
 	if err != nil {
 		return nil, err
 	}

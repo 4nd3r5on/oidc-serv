@@ -31,7 +31,7 @@ func (h *Handlers) CreateUser(ctx context.Context, req *genapi.CreateUserRequest
 	return &genapi.CreateUserResponse{ID: id}, nil
 }
 
-func (h *Handlers) GetUserById(ctx context.Context, params genapi.GetUserByIdParams) (genapi.GetUserByIdRes, error) {
+func (h *Handlers) GetUserById(ctx context.Context, params genapi.GetUserByIdParams) (genapi.GetUserByIdRes, error) { //nolint:revive
 	user, err := h.GetByID.Get(ctx, params.UserId)
 	if err != nil {
 		if errors.Is(err, errs.ErrUnauthorized) {

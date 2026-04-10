@@ -8,8 +8,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/4nd3r5on/oidc-serv/internal/keymanager"
 	"go.yaml.in/yaml/v4"
+
+	"github.com/4nd3r5on/oidc-serv/internal/keymanager"
 )
 
 type unmarshalFunc func(data []byte, v any) error

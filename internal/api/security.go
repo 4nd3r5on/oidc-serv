@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ogen-go/ogen/ogenerrors"
+
 	"github.com/4nd3r5on/oidc-serv/internal/app/auth"
 	"github.com/4nd3r5on/oidc-serv/pkg/api"
 	"github.com/4nd3r5on/oidc-serv/pkg/errs"
-	"github.com/ogen-go/ogen/ogenerrors"
 )
 
 type SecurityHandler struct {
 	TMB, Session auth.Verifier
+	AdminKey     string
 }
 
 func (sh *SecurityHandler) HandleSessionAuth(
@@ -24,6 +26,17 @@ func (sh *SecurityHandler) HandleSessionAuth(
 	}
 	clientData, err := sh.Session.Verify(ctx, string(operationName), t.Token, t.Roles)
 	return handleVerifierFuncOut(ctx, clientData, err)
+}
+
+func (sh *SecurityHandler) HandleAdminKeyAuth(
+	ctx context.Context,
+	_ api.OperationName,
+	t api.AdminKeyAuth,
+) (context.Context, error) {
+	if sh.AdminKey == "" || t.APIKey != sh.AdminKey {
+		return ctx, errs.ErrUnauthorized
+	}
+	return ctx, nil
 }
 
 func (sh *SecurityHandler) HandleTmbAuth(ctx context.Context, operationName api.OperationName, t api.TmbAuth) (context.Context, error) {

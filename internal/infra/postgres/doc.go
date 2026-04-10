@@ -11,7 +11,7 @@
 //   - [ClientRepo] — OIDC clients; secret and registration token are
 //     encrypted at rest with AES-256-GCM before being stored
 //   - [GrantRepo]  — OIDC grants; JSON columns (auth details, resources,
-//     store) are marshalled/unmarshalled transparently
+//     store) are marshaled/unmarshalled transparently
 //
 // # Error mapping
 //

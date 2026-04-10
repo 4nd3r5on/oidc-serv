@@ -13,6 +13,18 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// CreateClient implements createClient operation.
+//
+// Creates a new OIDC client.
+// - `id`: chosen by the caller; must be unique
+// - `secret`: plaintext secret — generated if omitted; returned **only once**, store securely
+// - `redirect_uris`: at least one URI is required.
+//
+// POST /clients
+func (UnimplementedHandler) CreateClient(ctx context.Context, req *CreateClientRequest) (r CreateClientRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CreateUser implements createUser operation.
 //
 // Creates a new user account.
@@ -25,12 +37,30 @@ func (UnimplementedHandler) CreateUser(ctx context.Context, req *CreateUserReque
 	return r, ht.ErrNotImplemented
 }
 
+// DeleteClient implements deleteClient operation.
+//
+// Delete an OIDC client.
+//
+// DELETE /clients/{clientId}
+func (UnimplementedHandler) DeleteClient(ctx context.Context, params DeleteClientParams) (r DeleteClientRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // DeleteMe implements deleteMe operation.
 //
 // Delete the authenticated user.
 //
 // DELETE /me
 func (UnimplementedHandler) DeleteMe(ctx context.Context) (r DeleteMeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetClientById implements getClientById operation.
+//
+// Get an OIDC client by ID.
+//
+// GET /clients/{clientId}
+func (UnimplementedHandler) GetClientById(ctx context.Context, params GetClientByIdParams) (r GetClientByIdRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

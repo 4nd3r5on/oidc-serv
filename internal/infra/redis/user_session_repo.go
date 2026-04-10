@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/4nd3r5on/oidc-serv/internal/app/session"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/4nd3r5on/oidc-serv/internal/app/session"
 )
 
 // Key scheme:
@@ -17,7 +18,7 @@ import (
 const userSessionPrefix = "user_session:"
 
 // userSessionRecord is the shape written to Redis.
-// uuid.UUID does not serialise cleanly as JSON so we store it as a string.
+// uuid.UUID does not serialize cleanly as JSON so we store it as a string.
 type userSessionRecord struct {
 	Key       string    `json:"id"`
 	UserID    string    `json:"user_id"`

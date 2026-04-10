@@ -1,4 +1,6 @@
-package postgres
+// Package crypto provides AES-256-GCM helpers for at-rest encryption of
+// sensitive fields before they are written to persistent storage.
+package crypto
 
 import (
 	"crypto/aes"
@@ -8,10 +10,10 @@ import (
 	"io"
 )
 
-// encrypt encrypts plaintext with AES-256-GCM using the provided 32-byte key.
-// The nonce is prepended to the returned ciphertext so decrypt can recover it.
+// Encrypt encrypts plaintext with AES-256-GCM using the provided 32-byte key.
+// The nonce is prepended to the returned ciphertext so [Decrypt] can recover it.
 // Returns nil for empty plaintext.
-func encrypt(key, plaintext []byte) ([]byte, error) {
+func Encrypt(key, plaintext []byte) ([]byte, error) {
 	if len(plaintext) == 0 {
 		return nil, nil
 	}
@@ -30,9 +32,9 @@ func encrypt(key, plaintext []byte) ([]byte, error) {
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
-// decrypt decrypts AES-256-GCM ciphertext produced by [encrypt].
+// Decrypt decrypts AES-256-GCM ciphertext produced by [Encrypt].
 // Returns nil for nil/empty input.
-func decrypt(key, ciphertext []byte) ([]byte, error) {
+func Decrypt(key, ciphertext []byte) ([]byte, error) {
 	if len(ciphertext) == 0 {
 		return nil, nil
 	}

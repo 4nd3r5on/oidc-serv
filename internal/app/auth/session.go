@@ -5,9 +5,10 @@ import (
 	"errors"
 	"log/slog"
 
+	"github.com/google/uuid"
+
 	appsession "github.com/4nd3r5on/oidc-serv/internal/app/session"
 	"github.com/4nd3r5on/oidc-serv/pkg/errs"
-	"github.com/google/uuid"
 )
 
 type SessionStore interface {
@@ -34,7 +35,7 @@ func NewVerifySession(logger *slog.Logger) *VerifySession {
 // Does basic key validation and builds client data with the key.
 func (v *VerifySession) Verify(ctx context.Context, _, token string, scopes []string) (*ClientData, error) {
 	// NOTE: Might be later extended
-	// for example, with TTL embeded into the token
+	// for example, with TTL embedded into the token
 	// for performance improvements
 	// Logic: if the token says it's outdated we probably can just trust it?
 

@@ -3,10 +3,11 @@ package postgres
 import (
 	"context"
 
-	"github.com/4nd3r5on/oidc-serv/internal/app/users"
-	"github.com/4nd3r5on/oidc-serv/pkg/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/4nd3r5on/oidc-serv/internal/app/users"
+	"github.com/4nd3r5on/oidc-serv/pkg/db"
 )
 
 // UserRepo is a PostgreSQL-backed implementation of the user repository

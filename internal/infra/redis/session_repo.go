@@ -14,9 +14,10 @@ import (
 //
 // Primary:   session:{id}                  → JSON AuthnSession
 // Secondary: session:callback:{callbackID} → id
-//            session:code:{authCode}        → id
-//            session:par:{parID}            → id
-//            session:ciba:{cibaID}          → id
+//
+//	session:code:{authCode}        → id
+//	session:par:{parID}            → id
+//	session:ciba:{cibaID}          → id
 //
 // Secondary keys point to the primary so any lookup method can fetch the full
 // session in two round-trips (GET secondary → GET primary). All keys carry the
@@ -152,7 +153,7 @@ func (r *SessionRepo) sessionByPrimaryKey(ctx context.Context, id string) (*goid
 	return &session, nil
 }
 
-func sessionPrimaryKey(id string) string         { return sessionPrimaryPrefix + id }
+func sessionPrimaryKey(id string) string          { return sessionPrimaryPrefix + id }
 func sessionCallbackKey(callbackID string) string { return sessionCallbackPrefix + callbackID }
 func sessionCodeKey(code string) string           { return sessionCodePrefix + code }
 func sessionPARKey(parID string) string           { return sessionPARPrefix + parID }

@@ -1,4 +1,4 @@
-package postgres
+package crypto
 
 import (
 	"bytes"
@@ -10,11 +10,11 @@ var testKey = bytes.Repeat([]byte("k"), 32)
 func TestEncryptDecryptRoundtrip(t *testing.T) {
 	plaintext := []byte("hello, world")
 
-	ciphertext, err := encrypt(testKey, plaintext)
+	ciphertext, err := Encrypt(testKey, plaintext)
 	if err != nil {
 		t.Fatalf("encrypt: %v", err)
 	}
-	got, err := decrypt(testKey, ciphertext)
+	got, err := Decrypt(testKey, ciphertext)
 	if err != nil {
 		t.Fatalf("decrypt: %v", err)
 	}
@@ -26,11 +26,11 @@ func TestEncryptDecryptRoundtrip(t *testing.T) {
 func TestEncryptProducesNonDeterministicOutput(t *testing.T) {
 	plaintext := []byte("same input")
 
-	ct1, err := encrypt(testKey, plaintext)
+	ct1, err := Encrypt(testKey, plaintext)
 	if err != nil {
 		t.Fatalf("first encrypt: %v", err)
 	}
-	ct2, err := encrypt(testKey, plaintext)
+	ct2, err := Encrypt(testKey, plaintext)
 	if err != nil {
 		t.Fatalf("second encrypt: %v", err)
 	}
@@ -40,7 +40,7 @@ func TestEncryptProducesNonDeterministicOutput(t *testing.T) {
 }
 
 func TestEncryptEmptyReturnsNil(t *testing.T) {
-	ct, err := encrypt(testKey, []byte{})
+	ct, err := Encrypt(testKey, []byte{})
 	if err != nil {
 		t.Fatalf("encrypt: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestEncryptEmptyReturnsNil(t *testing.T) {
 }
 
 func TestDecryptNilReturnsNil(t *testing.T) {
-	got, err := decrypt(testKey, nil)
+	got, err := Decrypt(testKey, nil)
 	if err != nil {
 		t.Fatalf("decrypt: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestDecryptNilReturnsNil(t *testing.T) {
 }
 
 func TestDecryptEmptyReturnsNil(t *testing.T) {
-	got, err := decrypt(testKey, []byte{})
+	got, err := Decrypt(testKey, []byte{})
 	if err != nil {
 		t.Fatalf("decrypt: %v", err)
 	}
@@ -70,45 +70,45 @@ func TestDecryptEmptyReturnsNil(t *testing.T) {
 }
 
 func TestDecryptWrongKeyFails(t *testing.T) {
-	ct, err := encrypt(testKey, []byte("secret"))
+	ct, err := Encrypt(testKey, []byte("secret"))
 	if err != nil {
 		t.Fatalf("encrypt: %v", err)
 	}
 	wrongKey := bytes.Repeat([]byte("x"), 32)
-	_, err = decrypt(wrongKey, ct)
+	_, err = Decrypt(wrongKey, ct)
 	if err == nil {
 		t.Fatal("expected error decrypting with wrong key")
 	}
 }
 
 func TestDecryptTamperedCiphertextFails(t *testing.T) {
-	ct, err := encrypt(testKey, []byte("secret"))
+	ct, err := Encrypt(testKey, []byte("secret"))
 	if err != nil {
 		t.Fatalf("encrypt: %v", err)
 	}
 	ct[len(ct)-1] ^= 0xff // flip last byte
-	_, err = decrypt(testKey, ct)
+	_, err = Decrypt(testKey, ct)
 	if err == nil {
 		t.Fatal("expected error decrypting tampered ciphertext")
 	}
 }
 
 func TestDecryptTooShortFails(t *testing.T) {
-	_, err := decrypt(testKey, []byte("short"))
+	_, err := Decrypt(testKey, []byte("short"))
 	if err == nil {
 		t.Fatal("expected error for ciphertext shorter than nonce size")
 	}
 }
 
 func TestEncryptInvalidKeyFails(t *testing.T) {
-	_, err := encrypt([]byte("bad key"), []byte("data"))
+	_, err := Encrypt([]byte("bad key"), []byte("data"))
 	if err == nil {
 		t.Fatal("expected error for invalid key size")
 	}
 }
 
 func TestDecryptInvalidKeyFails(t *testing.T) {
-	_, err := decrypt([]byte("bad key"), []byte("some ciphertext bytes here!!"))
+	_, err := Decrypt([]byte("bad key"), []byte("some ciphertext bytes here!!"))
 	if err == nil {
 		t.Fatal("expected error for invalid key size")
 	}

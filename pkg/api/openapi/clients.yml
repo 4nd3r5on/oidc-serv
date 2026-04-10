@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: Clients
+  version: 0.1.0
+
+paths:
+  /clients:
+    post:
+      operationId: createClient
+      summary: Create an OIDC client
+      description: |
+        Creates a new OIDC client.
+
+        - `id`: chosen by the caller; must be unique
+        - `secret`: plaintext secret — generated if omitted; returned **only once**, store securely
+        - `redirect_uris`: at least one URI is required
+      tags: [Clients]
+      security:
+        - adminKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClientRequest'
+      responses:
+        '201':
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateClientResponse'
+        '400':
+          $ref: './lib/errs.yml#/components/responses/BadRequest'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
+        '409':
+          $ref: './lib/errs.yml#/components/responses/Conflict'
+        default:
+          $ref: './lib/errs.yml#/components/responses/InternalError'
+
+  /clients/{clientId}:
+    parameters:
+      - $ref: '#/components/parameters/ClientIdParam'
+
+    get:
+      operationId: getClientById
+      summary: Get an OIDC client by ID
+      tags: [Clients]
+      security:
+        - adminKeyAuth: []
+      responses:
+        '200':
+          description: Client found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OIDCClient'
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
+        '404':
+          $ref: './lib/errs.yml#/components/responses/NotFound'
+        default:
+          $ref: './lib/errs.yml#/components/responses/InternalError'
+
+    delete:
+      operationId: deleteClient
+      summary: Delete an OIDC client
+      tags: [Clients]
+      security:
+        - adminKeyAuth: []
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: './lib/errs.yml#/components/responses/Unauthorized'
+        '404':
+          $ref: './lib/errs.yml#/components/responses/NotFound'
+        default:
+          $ref: './lib/errs.yml#/components/responses/InternalError'
+
+components:
+  parameters:
+    ClientIdParam:
+      name: clientId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: my-client
+
+  schemas:
+    OIDCClient:
+      description: OIDC client metadata. Never includes the secret.
+      type: object
+      required: [id, redirect_uris, grant_types, response_types, scope, token_endpoint_auth_method, created_at, expires_at]
+      properties:
+        id:
+          type: string
+          example: my-client
+        redirect_uris:
+          type: array
+          items:
+            type: string
+            format: uri
+        grant_types:
+          type: array
+          items:
+            type: string
+          example: [authorization_code]
+        response_types:
+          type: array
+          items:
+            type: string
+          example: [code]
+        scope:
+          type: string
+          example: openid profile
+        token_endpoint_auth_method:
+          type: string
+          example: client_secret_basic
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp
+        expires_at:
+          type: integer
+          format: int64
+          description: Unix timestamp; 0 means no expiry
+
+    CreateClientRequest:
+      type: object
+      required: [id, redirect_uris]
+      properties:
+        id:
+          type: string
+          example: my-client
+        secret:
+          description: Plaintext secret. Generated if omitted.
+          type: string
+          format: password
+        redirect_uris:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uri
+        grant_types:
+          type: array
+          items:
+            type: string
+        response_types:
+          type: array
+          items:
+            type: string
+        scope:
+          type: string
+          example: openid profile
+        token_endpoint_auth_method:
+          type: string
+          default: client_secret_basic
+
+    CreateClientResponse:
+      type: object
+      required: [id, secret]
+      properties:
+        id:
+          type: string
+          example: my-client
+        secret:
+          description: Plaintext client secret — returned only once, store securely.
+          type: string

@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 )
 
 // ErrInvalidCredentials is returned when username or password do not match.

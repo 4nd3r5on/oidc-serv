@@ -29,7 +29,7 @@ func NewClientRepoCached(repo goidc.ClientManager) *ClientRepoCached {
 }
 
 // Run starts the cache's background cleanup loop. It blocks until ctx is
-// cancelled and should be called in a goroutine.
+// canceled and should be called in a goroutine.
 func (r *ClientRepoCached) Run(ctx context.Context) error {
 	return r.cache.Run(ctx)
 }

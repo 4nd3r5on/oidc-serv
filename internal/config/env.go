@@ -26,6 +26,9 @@ const (
 	// :8080
 	// 0.0.0.0:8080
 	EnvServerAddr = "SERVER_ADDR"
+	// required — static key protecting client management endpoints
+	// passed as the X-Admin-Key header
+	EnvAdminAPIKey = "ADMIN_API_KEY"
 )
 
 type Environment int8

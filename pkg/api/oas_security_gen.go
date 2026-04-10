@@ -13,6 +13,10 @@ import (
 
 // SecurityHandler is handler for security parameters.
 type SecurityHandler interface {
+	// HandleAdminKeyAuth handles adminKeyAuth security.
+	// Static admin API key configured via the `ADMIN_API_KEY` environment variable.
+	// Required for all client management endpoints.
+	HandleAdminKeyAuth(ctx context.Context, operationName OperationName, t AdminKeyAuth) (context.Context, error)
 	// HandleSessionAuth handles sessionAuth security.
 	// Session key issued by the login endpoint.
 	// Format: `Bearer <session-key>`.
@@ -36,6 +40,34 @@ func findAuthorization(h http.Header, prefix string) (string, bool) {
 		return value, true
 	}
 	return "", false
+}
+
+// operationRolesAdminKeyAuth is a private map storing roles per operation.
+var operationRolesAdminKeyAuth = map[string][]string{
+	CreateClientOperation:  []string{},
+	DeleteClientOperation:  []string{},
+	GetClientByIdOperation: []string{},
+}
+
+// GetRolesForAdminKeyAuth returns the required roles for the given operation.
+//
+// This is useful for authorization scenarios where you need to know which roles
+// are required for an operation.
+//
+// Example:
+//
+//	requiredRoles := GetRolesForAdminKeyAuth(AddPetOperation)
+//
+// Returns nil if the operation has no role requirements or if the operation is unknown.
+func GetRolesForAdminKeyAuth(operation string) []string {
+	roles, ok := operationRolesAdminKeyAuth[operation]
+	if !ok {
+		return nil
+	}
+	// Return a copy to prevent external modification
+	result := make([]string, len(roles))
+	copy(result, roles)
+	return result
 }
 
 // operationRolesSessionAuth is a private map storing roles per operation.
@@ -102,6 +134,24 @@ func GetRolesForTmbAuth(operation string) []string {
 	return result
 }
 
+func (s *Server) securityAdminKeyAuth(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
+	var t AdminKeyAuth
+	const parameterName = "X-Admin-Key"
+	value := req.Header.Get(parameterName)
+	if value == "" {
+		return ctx, false, nil
+	}
+	t.APIKey = value
+	t.Roles = operationRolesAdminKeyAuth[operationName]
+	rctx, err := s.sec.HandleAdminKeyAuth(ctx, operationName, t)
+	if errors.Is(err, ogenerrors.ErrSkipServerSecurity) {
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+	return rctx, true, err
+}
+
 func (s *Server) securitySessionAuth(ctx context.Context, operationName OperationName, req *http.Request) (context.Context, bool, error) {
 	var t SessionAuth
 	token, ok := findAuthorization(req.Header, "Bearer")
@@ -138,6 +188,10 @@ func (s *Server) securityTmbAuth(ctx context.Context, operationName OperationNam
 
 // SecuritySource is provider of security values (tokens, passwords, etc.).
 type SecuritySource interface {
+	// AdminKeyAuth provides adminKeyAuth security value.
+	// Static admin API key configured via the `ADMIN_API_KEY` environment variable.
+	// Required for all client management endpoints.
+	AdminKeyAuth(ctx context.Context, operationName OperationName) (AdminKeyAuth, error)
 	// SessionAuth provides sessionAuth security value.
 	// Session key issued by the login endpoint.
 	// Format: `Bearer <session-key>`.
@@ -148,6 +202,14 @@ type SecuritySource interface {
 	TmbAuth(ctx context.Context, operationName OperationName) (TmbAuth, error)
 }
 
+func (s *Client) securityAdminKeyAuth(ctx context.Context, operationName OperationName, req *http.Request) error {
+	t, err := s.sec.AdminKeyAuth(ctx, operationName)
+	if err != nil {
+		return errors.Wrap(err, "security source \"AdminKeyAuth\"")
+	}
+	req.Header.Set("X-Admin-Key", t.APIKey)
+	return nil
+}
 func (s *Client) securitySessionAuth(ctx context.Context, operationName OperationName, req *http.Request) error {
 	t, err := s.sec.SessionAuth(ctx, operationName)
 	if err != nil {

@@ -130,10 +130,10 @@ func GetHTTPRespData(err error) (status int, response map[string]any) {
 // response and writes it. It:
 //   - resolves the status code and JSON body via [GetHTTPRespData]
 //   - sets Content-Type: application/json and writes the response
-func HandleHTTP(ctx context.Context, logger *slog.Logger, w http.ResponseWriter, err error, args ...any) {
+func HandleHTTP(w http.ResponseWriter, err error) {
 	status, resp := GetHTTPRespData(err)
 	respBytes, _ := json.Marshal(resp)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write(respBytes)
+	_, _ = w.Write(respBytes)
 }

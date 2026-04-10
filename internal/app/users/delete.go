@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 	"github.com/google/uuid"
+
+	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 )
 
 type Delete struct {

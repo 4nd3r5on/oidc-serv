@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"unicode"
 
-	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 	"golang.org/x/text/language"
+
+	"github.com/4nd3r5on/oidc-serv/pkg/errs"
 )
 
 const (

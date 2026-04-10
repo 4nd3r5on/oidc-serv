@@ -3,13 +3,14 @@ package postgres
 import (
 	"context"
 
-	"github.com/4nd3r5on/oidc-serv/pkg/db"
 	"github.com/luikyv/go-oidc/pkg/goidc"
+
+	"github.com/4nd3r5on/oidc-serv/pkg/db"
 )
 
 // GrantRepo is a PostgreSQL-backed implementation of [goidc.GrantManager].
 // The auth_details, resources, and store columns are stored as JSON blobs and
-// marshalled/unmarshalled transparently by this repo.
+// marshaled/unmarshalled transparently by this repo.
 type GrantRepo struct {
 	q *db.Queries
 }
@@ -19,7 +20,7 @@ func NewGrantRepo(q *db.Queries) *GrantRepo {
 	return &GrantRepo{q: q}
 }
 
-// Save upserts a grant, serialising variable-length fields to JSON columns.
+// Save upserts a grant, serializing variable-length fields to JSON columns.
 func (r *GrantRepo) Save(ctx context.Context, g *goidc.Grant) error {
 	authDetails, err := marshalJSON(g.AuthDetails)
 	if err != nil {

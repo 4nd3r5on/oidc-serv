@@ -10,7 +10,6 @@ type Handlers struct {
 
 	// users (admin operations)
 	Create        UserCreator
-	GetByID       UserGetterByID
 	GetByUsername UserGetterByUsername
 
 	// me (self-service — auth resolved internally via Me.Auth)

@@ -277,14 +277,6 @@ type GetClientByIdUnauthorized ErrorResponse
 
 func (*GetClientByIdUnauthorized) getClientByIdRes() {}
 
-type GetUserByIdNotFound ErrorResponse
-
-func (*GetUserByIdNotFound) getUserByIdRes() {}
-
-type GetUserByIdUnauthorized ErrorResponse
-
-func (*GetUserByIdUnauthorized) getUserByIdRes() {}
-
 type GetUserByUsernameNotFound ErrorResponse
 
 func (*GetUserByUsernameNotFound) getUserByUsernameRes() {}
@@ -745,5 +737,4 @@ func (s *User) SetLocale(val string) {
 }
 
 func (*User) getMeRes()             {}
-func (*User) getUserByIdRes()       {}
 func (*User) getUserByUsernameRes() {}

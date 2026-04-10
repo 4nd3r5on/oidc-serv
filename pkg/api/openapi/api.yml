@@ -7,8 +7,6 @@ info:
 paths:
   /users:
     $ref: './users.yml#/paths/~1users'
-  /users/{userId}:
-    $ref: './users.yml#/paths/~1users~1{userId}'
   /users/by-username/{username}:
     $ref: './users.yml#/paths/~1users~1by-username~1{username}'
   /me:

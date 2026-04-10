@@ -60,7 +60,6 @@ func main() {
 		ClientDelete: app.DeleteClient,
 
 		Create:        app.CreateUser,
-		GetByID:       app.GetUser,
 		GetByUsername: app.GetUserByUsername,
 		Me:            app.Me,
 	}

@@ -50,12 +50,6 @@ type Handler interface {
 	//
 	// GET /me
 	GetMe(ctx context.Context) (GetMeRes, error)
-	// GetUserById implements getUserById operation.
-	//
-	// Get a user by ID.
-	//
-	// GET /users/{userId}
-	GetUserById(ctx context.Context, params GetUserByIdParams) (GetUserByIdRes, error)
 	// GetUserByUsername implements getUserByUsername operation.
 	//
 	// Get a user by username.

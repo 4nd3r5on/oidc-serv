@@ -39,30 +39,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         default:
           $ref: '#/components/responses/InternalError'
-  /users/{userId}:
-    parameters:
-      - $ref: '#/components/parameters/UserIdParam'
-    get:
-      operationId: getUserById
-      summary: Get a user by ID
-      tags:
-        - Users
-      security:
-        - sessionAuth: []
-        - tmbAuth: []
-      responses:
-        '200':
-          description: User found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        default:
-          $ref: '#/components/responses/InternalError'
   /users/by-username/{username}:
     parameters:
       - name: username
@@ -505,14 +481,6 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   parameters:
-    UserIdParam:
-      name: userId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-        example: 018e4f3a-1b2c-7d8e-9f0a-b1c2d3e4f5a6
     ClientIdParam:
       name: clientId
       in: path

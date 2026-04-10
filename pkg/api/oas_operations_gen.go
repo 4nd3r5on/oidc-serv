@@ -12,7 +12,6 @@ const (
 	DeleteMeOperation          OperationName = "DeleteMe"
 	GetClientByIdOperation     OperationName = "GetClientById"
 	GetMeOperation             OperationName = "GetMe"
-	GetUserByIdOperation       OperationName = "GetUserById"
 	GetUserByUsernameOperation OperationName = "GetUserByUsername"
 	UpdateMeOperation          OperationName = "UpdateMe"
 	UpdateMyPasswordOperation  OperationName = "UpdateMyPassword"

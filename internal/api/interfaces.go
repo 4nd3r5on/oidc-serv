@@ -25,10 +25,6 @@ type UserCreator interface {
 	Create(ctx context.Context, opts appusers.CreateOpts) (uuid.UUID, error)
 }
 
-type UserGetterByID interface {
-	Get(ctx context.Context, id uuid.UUID) (*appusers.GetRes, error)
-}
-
 type UserGetterByUsername interface {
 	Get(ctx context.Context, username string) (*appusers.GetRes, error)
 }

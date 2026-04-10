@@ -23,14 +23,11 @@ var (
 		"GET":    "Authorization",
 		"PATCH":  "Authorization,Content-Type",
 	}
-	rn11AllowedHeaders = map[string]string{
+	rn9AllowedHeaders = map[string]string{
 		"PATCH": "Authorization,Content-Type",
 	}
 	rn3AllowedHeaders = map[string]string{
 		"POST": "Authorization,Content-Type",
-	}
-	rn10AllowedHeaders = map[string]string{
-		"GET": "Authorization",
 	}
 	rn8AllowedHeaders = map[string]string{
 		"GET": "Authorization",
@@ -198,7 +195,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "PATCH",
-								allowedHeaders: rn11AllowedHeaders,
+								allowedHeaders: rn9AllowedHeaders,
 								acceptPost:     "",
 								acceptPatch:    "application/json",
 							})
@@ -233,57 +230,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				switch elem[0] {
-				case '/': // Prefix: "/"
+				case '/': // Prefix: "/by-username/"
 
-					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+					if l := len("/by-username/"); len(elem) >= l && elem[0:l] == "/by-username/" {
 						elem = elem[l:]
 					} else {
 						break
 					}
 
-					if len(elem) == 0 {
-						break
-					}
-					switch elem[0] {
-					case 'b': // Prefix: "by-username/"
-						origElem := elem
-						if l := len("by-username/"); len(elem) >= l && elem[0:l] == "by-username/" {
-							elem = elem[l:]
-						} else {
-							break
-						}
-
-						// Param: "username"
-						// Leaf parameter, slashes are prohibited
-						idx := strings.IndexByte(elem, '/')
-						if idx >= 0 {
-							break
-						}
-						args[0] = elem
-						elem = ""
-
-						if len(elem) == 0 {
-							// Leaf node.
-							switch r.Method {
-							case "GET":
-								s.handleGetUserByUsernameRequest([1]string{
-									args[0],
-								}, elemIsEscaped, w, r)
-							default:
-								s.notAllowed(w, r, notAllowedParams{
-									allowedMethods: "GET",
-									allowedHeaders: rn10AllowedHeaders,
-									acceptPost:     "",
-									acceptPatch:    "",
-								})
-							}
-
-							return
-						}
-
-						elem = origElem
-					}
-					// Param: "userId"
+					// Param: "username"
 					// Leaf parameter, slashes are prohibited
 					idx := strings.IndexByte(elem, '/')
 					if idx >= 0 {
@@ -296,7 +251,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						// Leaf node.
 						switch r.Method {
 						case "GET":
-							s.handleGetUserByIdRequest([1]string{
+							s.handleGetUserByUsernameRequest([1]string{
 								args[0],
 							}, elemIsEscaped, w, r)
 						default:
@@ -575,55 +530,15 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 					}
 				}
 				switch elem[0] {
-				case '/': // Prefix: "/"
+				case '/': // Prefix: "/by-username/"
 
-					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+					if l := len("/by-username/"); len(elem) >= l && elem[0:l] == "/by-username/" {
 						elem = elem[l:]
 					} else {
 						break
 					}
 
-					if len(elem) == 0 {
-						break
-					}
-					switch elem[0] {
-					case 'b': // Prefix: "by-username/"
-						origElem := elem
-						if l := len("by-username/"); len(elem) >= l && elem[0:l] == "by-username/" {
-							elem = elem[l:]
-						} else {
-							break
-						}
-
-						// Param: "username"
-						// Leaf parameter, slashes are prohibited
-						idx := strings.IndexByte(elem, '/')
-						if idx >= 0 {
-							break
-						}
-						args[0] = elem
-						elem = ""
-
-						if len(elem) == 0 {
-							// Leaf node.
-							switch method {
-							case "GET":
-								r.name = GetUserByUsernameOperation
-								r.summary = "Get a user by username"
-								r.operationID = "getUserByUsername"
-								r.operationGroup = ""
-								r.pathPattern = "/users/by-username/{username}"
-								r.args = args
-								r.count = 1
-								return r, true
-							default:
-								return
-							}
-						}
-
-						elem = origElem
-					}
-					// Param: "userId"
+					// Param: "username"
 					// Leaf parameter, slashes are prohibited
 					idx := strings.IndexByte(elem, '/')
 					if idx >= 0 {
@@ -636,11 +551,11 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						// Leaf node.
 						switch method {
 						case "GET":
-							r.name = GetUserByIdOperation
-							r.summary = "Get a user by ID"
-							r.operationID = "getUserById"
+							r.name = GetUserByUsernameOperation
+							r.summary = "Get a user by username"
+							r.operationID = "getUserByUsername"
 							r.operationGroup = ""
-							r.pathPattern = "/users/{userId}"
+							r.pathPattern = "/users/by-username/{username}"
 							r.args = args
 							r.count = 1
 							return r, true

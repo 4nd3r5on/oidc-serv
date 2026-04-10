@@ -73,15 +73,6 @@ func (UnimplementedHandler) GetMe(ctx context.Context) (r GetMeRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetUserById implements getUserById operation.
-//
-// Get a user by ID.
-//
-// GET /users/{userId}
-func (UnimplementedHandler) GetUserById(ctx context.Context, params GetUserByIdParams) (r GetUserByIdRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // GetUserByUsername implements getUserByUsername operation.
 //
 // Get a user by username.

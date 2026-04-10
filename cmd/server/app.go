@@ -24,7 +24,6 @@ type App struct {
 
 	// users
 	CreateUser        *appusers.Create
-	GetUser           *appusers.GetByID
 	GetUserByUsername *appusers.GetByUsername
 	UpdateUser        *appusers.Update
 	UpdatePassword    *appusers.UpdatePasswordByID
@@ -97,7 +96,6 @@ func initApp(repos *Repos, logger *slog.Logger) *App {
 		DeleteClient: deleteClient,
 
 		CreateUser:        createUser,
-		GetUser:           getUser,
 		GetUserByUsername: getUserByUsername,
 		UpdateUser:        updateUser,
 		UpdatePassword:    updatePassword,

@@ -25,10 +25,6 @@ type GetMeRes interface {
 	getMeRes()
 }
 
-type GetUserByIdRes interface {
-	getUserByIdRes()
-}
-
 type GetUserByUsernameRes interface {
 	getUserByUsernameRes()
 }

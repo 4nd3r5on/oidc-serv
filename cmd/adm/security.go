@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 
-	api "github.com/4nd3r5on/oidc-serv/pkg/api"
 	"github.com/ogen-go/ogen/ogenerrors"
+
+	"github.com/4nd3r5on/oidc-serv/pkg/api"
 )
 
 type adminSecurity struct{ key string }

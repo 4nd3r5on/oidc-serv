@@ -66,14 +66,11 @@ public_key_path: ./jwt_pub.pem
 
 Create `jwt_config.yml` containing
 ```yml
-# jwt_config.yml
 algorithm: "HS256"
-secret_key: "<base64-encoded secret>"
 ```
-
-If u want to generate the secret key and put it right into the config u can use
+then execute to generate a secret key
 ```sh
-yq -i '.secret_key = "'$(openssl rand -base64 32)'"' jwt_config.yml
+echo "secret_key: $(openssl rand -base64 32)" >> jwt_config.yml
 ```
 
 ## Managing clients

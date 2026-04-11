@@ -75,63 +75,43 @@ echo "secret_key: $(openssl rand -base64 32)" >> jwt_config.yml
 
 ## Managing clients
 
-Clients are managed via the `/api/v1/clients` endpoints, protected by `ADMIN_API_KEY`
-passed as the `X-Admin-Key` header.
+Clients are managed with `oidc-adm`, the admin CLI tool.
 
-The secret is never stored in plaintext — it is encrypted with AES-256-GCM using `ENCRYPTION_KEY`
-before being written, matching the server's [`Encrypt`](internal/infra/crypto/crypto.go) helper.
+```sh
+go build -o oidc-adm ./cmd/adm
+```
+
+Set the admin key (or pass it via `-key` on every call):
+
+```sh
+export OIDC_ADM_KEY="$ADMIN_API_KEY"
+```
+
+The server URL defaults to `http://localhost:9090/api/v1` and can be overridden with `-url` or `OIDC_ADM_URL`.
 
 ### Create
 
 ```sh
-curl -s -X POST http://localhost:9090/api/v1/clients \
-  -H "X-Admin-Key: $ADMIN_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": "my-client",
-    "redirect_uris": ["http://localhost:8080/callback"],
-    "scope": "openid profile"
-  }' | jq .
+oidc-adm clients create -id my-client \
+  -redirect-uri http://localhost:8080/callback \
+  -scope "openid profile"
 ```
 
-```json
-{
-  "id": "my-client",
-  "secret": "<plaintext secret>"
-}
+```
+client created
+  id:     my-client
+  secret: <plaintext secret>
+  (store the secret securely — returned only once)
 ```
 
 Save the `secret` — it is returned only once and cannot be recovered from the database.
 
-When a field is omitted from the request body, the server fills in these defaults:
-
-| Field | Default |
-|---|---|
-| `grant_types` | `["authorization_code"]` |
-| `response_types` | `["code"]` |
-| `token_endpoint_auth_method` | `"client_secret_basic"` |
-| `secret` | random 64-char hex string |
-
-#### Grant types
+## Grant types
 
 | Value | Description |
 |---|---|
 | `authorization_code` | Standard redirect-based flow. User is sent to the authorization endpoint, authenticates, and the client exchanges the returned code for tokens. Default and recommended for most clients. |
-| `refresh_token` | Allows the client to obtain a new access token using a refresh token, without re-authenticating the user. Include alongside `authorization_code` when long-lived sessions are needed. |
-
-### Get
-
-```sh
-curl -s http://localhost:9090/api/v1/clients/my-client \
-  -H "X-Admin-Key: $ADMIN_API_KEY" | jq .
-```
-
-### Delete
-
-```sh
-curl -s -X DELETE http://localhost:9090/api/v1/clients/my-client \
-  -H "X-Admin-Key: $ADMIN_API_KEY"
-```
+| `refresh_token` | Allows the client to obtain a new access token using a refresh token, without re-authenticating the user. Pass alongside `authorization_code` when long-lived sessions are needed. |
 
 ## Scopes
 

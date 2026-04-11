@@ -16,8 +16,8 @@ import (
 // stringSlice accumulates repeated flag values.
 type stringSlice []string
 
-func (s *stringSlice) String() string        { return strings.Join(*s, ", ") }
-func (s *stringSlice) Set(v string) error    { *s = append(*s, v); return nil }
+func (s *stringSlice) String() string     { return strings.Join(*s, ", ") }
+func (s *stringSlice) Set(v string) error { *s = append(*s, v); return nil }
 
 func runClients(args []string, adminKey, baseURL string) {
 	if len(args) == 0 {
@@ -100,17 +100,16 @@ func clientsCreate(args []string, adminKey, baseURL string) {
 		log.Fatalf("request failed: %v", err)
 	}
 
-	switch res.(type) {
+	switch res := res.(type) {
 	case *api.CreateClientResponse:
-		r := res.(*api.CreateClientResponse)
 		fmt.Printf("client created\n")
-		fmt.Printf("  id:     %s\n", r.ID)
-		fmt.Printf("  secret: %s\n", r.Secret)
+		fmt.Printf("  id:     %s\n", res.ID)
+		fmt.Printf("  secret: %s\n", res.Secret)
 		fmt.Printf("  (store the secret securely — returned only once)\n")
 	case *api.CreateClientBadRequest:
-		log.Fatalf("bad request: %s", res.(*api.CreateClientBadRequest).Error)
+		log.Fatalf("bad request: %s", res.Error)
 	case *api.CreateClientUnauthorized:
-		log.Fatalf("unauthorized: %s", res.(*api.CreateClientUnauthorized).Error)
+		log.Fatalf("unauthorized: %s", res.Error)
 	default:
 		log.Fatalf("unexpected response type: %T", res)
 	}
@@ -136,27 +135,26 @@ func clientsGet(args []string, adminKey, baseURL string) {
 		log.Fatalf("request failed: %v", err)
 	}
 
-	switch res.(type) {
+	switch res := res.(type) {
 	case *api.OIDCClient:
-		r := res.(*api.OIDCClient)
-		uriStrs := make([]string, 0, len(r.RedirectUris))
-		for _, u := range r.RedirectUris {
+		uriStrs := make([]string, 0, len(res.RedirectUris))
+		for _, u := range res.RedirectUris {
 			uriStrs = append(uriStrs, u.String())
 		}
-		fmt.Printf("id:                         %s\n", r.ID)
-		fmt.Printf("scope:                      %s\n", r.Scope)
-		fmt.Printf("grant_types:                %s\n", strings.Join(r.GrantTypes, ", "))
-		fmt.Printf("response_types:             %s\n", strings.Join(r.ResponseTypes, ", "))
-		fmt.Printf("token_endpoint_auth_method: %s\n", r.TokenEndpointAuthMethod)
+		fmt.Printf("id:                         %s\n", res.ID)
+		fmt.Printf("scope:                      %s\n", res.Scope)
+		fmt.Printf("grant_types:                %s\n", strings.Join(res.GrantTypes, ", "))
+		fmt.Printf("response_types:             %s\n", strings.Join(res.ResponseTypes, ", "))
+		fmt.Printf("token_endpoint_auth_method: %s\n", res.TokenEndpointAuthMethod)
 		fmt.Printf("redirect_uris:              %s\n", strings.Join(uriStrs, ", "))
-		fmt.Printf("created_at:                 %s\n", time.Unix(r.CreatedAt, 0).UTC().Format(time.RFC3339))
-		if r.ExpiresAt != 0 {
-			fmt.Printf("expires_at:                 %s\n", time.Unix(r.ExpiresAt, 0).UTC().Format(time.RFC3339))
+		fmt.Printf("created_at:                 %s\n", time.Unix(res.CreatedAt, 0).UTC().Format(time.RFC3339))
+		if res.ExpiresAt != 0 {
+			fmt.Printf("expires_at:                 %s\n", time.Unix(res.ExpiresAt, 0).UTC().Format(time.RFC3339))
 		}
 	case *api.GetClientByIdNotFound:
-		log.Fatalf("not found: %s", res.(*api.GetClientByIdNotFound).Error)
+		log.Fatalf("not found: %s", res.Error)
 	case *api.GetClientByIdUnauthorized:
-		log.Fatalf("unauthorized: %s", res.(*api.GetClientByIdUnauthorized).Error)
+		log.Fatalf("unauthorized: %s", res.Error)
 	default:
 		log.Fatalf("unexpected response type: %T", res)
 	}
@@ -183,13 +181,13 @@ func clientsDelete(args []string, adminKey, baseURL string) {
 		log.Fatalf("request failed: %v", err)
 	}
 
-	switch res.(type) {
+	switch res := res.(type) {
 	case *api.DeleteClientNoContent:
 		fmt.Printf("client %q deleted\n", id)
 	case *api.DeleteClientNotFound:
-		log.Fatalf("not found: %s", res.(*api.DeleteClientNotFound).Error)
+		log.Fatalf("not found: %s", res.Error)
 	case *api.DeleteClientUnauthorized:
-		log.Fatalf("unauthorized: %s", res.(*api.DeleteClientUnauthorized).Error)
+		log.Fatalf("unauthorized: %s", res.Error)
 	default:
 		log.Fatalf("unexpected response type: %T", res)
 	}

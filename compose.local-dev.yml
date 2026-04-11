@@ -1,0 +1,36 @@
+# This compose doesn't start the OIDC serv itself, but
+# wires up all the infra for local developmnet
+
+volumes:
+  dev_database:
+    driver: local
+  dev_cache:
+    driver: local
+
+networks:
+  dev: ~
+
+services:
+  db:
+    extends:
+      file: compose.infra.yml
+      service: postgresql
+    env_file: ./.env
+    volumes:
+      - dev_database:/var/lib/postgresql
+    networks:
+      - dev
+    ports:
+      - 127.0.0.1:5432:5432
+
+  cache:
+    extends:
+      file: compose.infra.yml
+      service: redis
+    env_file: ./.env
+    networks:
+      - dev
+    volumes:
+      - dev_cache:/data
+    ports:
+      - 127.0.0.1:6379:6379

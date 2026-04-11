@@ -1,0 +1,33 @@
+services:
+  postgresql:
+    image: postgres:18.3-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_DB:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+      POSTGRES_USER: ${PG_USER:-postgres}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+        - CMD-SHELL
+        - pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
+      timeout: 5s
+    volumes:
+      - ./psql-initdb:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    environment:
+      - REDIS_PASSWORD=my_secure_password
+      - TZ=UTC
+    command: >
+      sh -c "redis-server --requirepass $$REDIS_PASSWORD"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "$$REDIS_PASSWORD", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

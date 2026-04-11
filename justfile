@@ -3,4 +3,4 @@ openapi-gen:
     go generate ./...
 
 run-dev:
-    reflex -r \\.go$ -s -- sh -c go run ./cmd/server
+    ENVIRONMENT=DEV reflex -r \\.go$ -s -- sh -c go run ./cmd/server

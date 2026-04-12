@@ -1,43 +1,58 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
 	api "github.com/4nd3r5on/oidc-serv/pkg/api"
 )
 
-func main() {
-	log.SetFlags(0)
+type Cmd interface {
+	// Short returns a one-line description of the command.
+	Short() string
+	// Help writes usage text and subcommands.
+	// Flag help is appended separately via flag.FlagSet.PrintDefaults() in Exec.
+	Help(w io.Writer, prefix string)
+	Exec(ctx context.Context, w io.Writer, args []string) error
+}
 
-	fs := flag.NewFlagSet("oidc-adm", flag.ContinueOnError)
-	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: oidc-adm [-key KEY] [-url URL] <command> [args]")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "commands:")
-		fmt.Fprintln(os.Stderr, "  clients  manage OIDC clients")
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "flags:")
-		fs.PrintDefaults()
+// rootCmd is the top-level command; it parses global flags and dispatches.
+type rootCmd struct {
+	subcmds map[string]Cmd
+}
+
+func (r *rootCmd) Short() string { return "OIDC server admin tool" }
+
+func (r *rootCmd) Help(w io.Writer, prefix string) {
+	fmt.Fprintf(w, "usage: %s [-key KEY] [-url URL] <command> [args]\n\n", prefix)
+	fmt.Fprintln(w, "commands:")
+	for _, name := range sortedKeys(r.subcmds) {
+		fmt.Fprintf(w, "  %-8s  %s\n", name, r.subcmds[name].Short())
 	}
+}
 
+func (r *rootCmd) Exec(ctx context.Context, w io.Writer, args []string) error {
+	fs := flag.NewFlagSet("oidc-adm", flag.ContinueOnError)
+	fs.SetOutput(w)
 	key := fs.String("key", "", "admin API key (overrides OIDC_ADM_KEY env var)")
 	serverURL := fs.String("url", "", "server base URL (overrides OIDC_ADM_URL; default: http://localhost:9090/api/v1)")
+	fs.Usage = func() { r.Help(w, "oidc-adm"); fmt.Fprintln(w, "\nflags:"); fs.PrintDefaults() }
 
-	if err := fs.Parse(os.Args[1:]); err != nil {
+	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
-			os.Exit(0)
+			return nil
 		}
-		os.Exit(1)
+		return err
 	}
 
 	adminKey := *key
 	if adminKey == "" {
 		adminKey = os.Getenv("OIDC_ADM_KEY")
 	}
-
 	baseURL := *serverURL
 	if baseURL == "" {
 		baseURL = os.Getenv("OIDC_ADM_URL")
@@ -45,44 +60,40 @@ func main() {
 	if baseURL == "" {
 		baseURL = "http://localhost:9090/api/v1"
 	}
+	ctx = ctxWithConfig(ctx, adminKey, baseURL)
 
-	args := fs.Args()
-	if len(args) == 0 {
-		fs.Usage()
-		os.Exit(0)
+	remaining := fs.Args()
+	if len(remaining) == 0 {
+		r.Help(w, "oidc-adm")
+		return nil
 	}
 
-	switch args[0] {
-	case "clients":
-		runClients(args[1:], adminKey, baseURL)
-	default:
-		log.Fatalf("unknown command: %s", args[0])
+	sub, ok := r.subcmds[remaining[0]]
+	if !ok {
+		return fmt.Errorf("unknown command: %s", remaining[0])
 	}
+	return sub.Exec(ctx, w, remaining[1:])
 }
 
-// mustClient validates the admin key and returns a ready API client.
-// Called only when a subcommand is about to make an actual API call.
-func mustClient(adminKey, baseURL string) *api.Client {
-	if adminKey == "" {
-		log.Fatal("admin key required: set OIDC_ADM_KEY or pass -key")
-	}
-	c, err := newAdminClient(baseURL, adminKey)
-	if err != nil {
-		log.Fatalf("failed to create client: %v", err)
-	}
-	return c
-}
+func main() {
+	log.SetFlags(0)
 
-func newAdminClient(serverURL, adminKey string) (*api.Client, error) {
-	return api.NewClient(serverURL, &adminSecurity{key: adminKey})
-}
+	root := &rootCmd{
+		subcmds: map[string]Cmd{
+			"clients": newClientsCmd(),
+		},
+	}
 
-// parseFlags parses a FlagSet and exits 0 on -help, 1 on other errors.
-func parseFlags(fs *flag.FlagSet, args []string) {
-	if err := fs.Parse(args); err != nil {
-		if err == flag.ErrHelp {
-			os.Exit(0)
-		}
+	if err := root.Exec(context.Background(), os.Stdout, os.Args[1:]); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// apiClient builds an API client from config stored in ctx.
+func apiClient(ctx context.Context) (*api.Client, error) {
+	adminKey := adminKeyFromCtx(ctx)
+	if adminKey == "" {
+		return nil, fmt.Errorf("admin key required: set OIDC_ADM_KEY or pass -key")
+	}
+	return api.NewClient(baseURLFromCtx(ctx), &adminSecurity{key: adminKey})
 }

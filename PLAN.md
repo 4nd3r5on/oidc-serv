@@ -1,0 +1,6 @@
+- List clients
+- Scopes/permissions
+- Root account creation on start
+- Get rid of admin api key in clients and use normal accounts instead
+- Passkeys/Webauthn
+- Email

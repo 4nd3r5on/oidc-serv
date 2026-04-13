@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 
@@ -16,8 +15,8 @@ type Cmd interface {
 	Short() string
 	// Help writes usage text and subcommands.
 	// Flag help is appended separately via flag.FlagSet.PrintDefaults() in Exec.
-	Help(w io.Writer, prefix string)
-	Exec(ctx context.Context, w io.Writer, args []string) error
+	Help(ctx context.Context, prefix string)
+	Exec(ctx context.Context, args []string) error
 }
 
 // rootCmd is the top-level command; it parses global flags and dispatches.
@@ -27,20 +26,19 @@ type rootCmd struct {
 
 func (r *rootCmd) Short() string { return "OIDC server admin tool" }
 
-func (r *rootCmd) Help(w io.Writer, prefix string) {
-	fmt.Fprintf(w, "usage: %s [-key KEY] [-url URL] <command> [args]\n\n", prefix)
-	fmt.Fprintln(w, "commands:")
+func (r *rootCmd) Help(ctx context.Context, prefix string) {
+	fmt.Printf("%susage: %s [-key KEY] [-url URL] <command> [args]\n\n", prefix, cmdLine(ctx))
+	fmt.Println("commands:")
 	for _, name := range sortedKeys(r.subcmds) {
-		fmt.Fprintf(w, "  %-8s  %s\n", name, r.subcmds[name].Short())
+		fmt.Printf("  %-8s  %s\n", name, r.subcmds[name].Short())
 	}
 }
 
-func (r *rootCmd) Exec(ctx context.Context, w io.Writer, args []string) error {
+func (r *rootCmd) Exec(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("oidc-adm", flag.ContinueOnError)
-	fs.SetOutput(w)
 	key := fs.String("key", "", "admin API key (overrides OIDC_ADM_KEY env var)")
 	serverURL := fs.String("url", "", "server base URL (overrides OIDC_ADM_URL; default: http://localhost:9090/api/v1)")
-	fs.Usage = func() { r.Help(w, "oidc-adm"); fmt.Fprintln(w, "\nflags:"); fs.PrintDefaults() }
+	fs.Usage = func() { r.Help(ctx, ""); fmt.Println("\nflags:"); fs.PrintDefaults() }
 
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -64,7 +62,7 @@ func (r *rootCmd) Exec(ctx context.Context, w io.Writer, args []string) error {
 
 	remaining := fs.Args()
 	if len(remaining) == 0 {
-		r.Help(w, "oidc-adm")
+		r.Help(ctx, "")
 		return nil
 	}
 
@@ -72,7 +70,7 @@ func (r *rootCmd) Exec(ctx context.Context, w io.Writer, args []string) error {
 	if !ok {
 		return fmt.Errorf("unknown command: %s", remaining[0])
 	}
-	return sub.Exec(ctx, w, remaining[1:])
+	return sub.Exec(ctxWithCmdName(ctx, remaining[0]), remaining[1:])
 }
 
 func main() {
@@ -84,7 +82,7 @@ func main() {
 		},
 	}
 
-	if err := root.Exec(context.Background(), os.Stdout, os.Args[1:]); err != nil {
+	if err := root.Exec(ctxWithCmdName(context.Background(), "oidc-adm"), os.Args[1:]); err != nil {
 		log.Fatal(err)
 	}
 }

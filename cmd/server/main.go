@@ -7,9 +7,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/rs/cors"
+	"golang.org/x/sync/errgroup"
 
 	internalapi "github.com/4nd3r5on/oidc-serv/internal/api"
 	"github.com/4nd3r5on/oidc-serv/internal/config"
@@ -18,7 +21,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	jwtConfigPath := flag.String("jwt-cfg", "./jwt_config.yml", "JWT Config file path")
 	flag.Parse()
@@ -41,7 +45,7 @@ func main() {
 	redisClient := mustConnectRedis()
 	defer redisClient.Close()
 
-	repos := initRepos(ctx, db.New(pool), redisClient, encKey, logger)
+	repos := initRepos(db.New(pool), redisClient, encKey)
 	app := initApp(repos, logger)
 
 	appProvider, err := initProvider(app, repos, *jwtConfigPath, "", logger)
@@ -78,6 +82,19 @@ func main() {
 		Handler:     cors.AllowAll().Handler(mux),
 		ReadTimeout: 5 * time.Second,
 	}
-	logger.Info("running server", "addr", server.Addr)
-	log.Fatal(server.ListenAndServe())
+
+	eg, egCtx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		return repos.Clients.Run(egCtx)
+	})
+
+	eg.Go(func() error {
+		logger.Info("running server", "addr", server.Addr)
+		return listenAndServe(egCtx, server)
+	})
+
+	if err := eg.Wait(); err != nil {
+		log.Fatalf("server stopped: %v", err)
+	}
 }

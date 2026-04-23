@@ -24,22 +24,32 @@ The only limit is my own skill.
 
 ## Configuration
 
+### Environment variables
+
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ENVIRONMENT` | yes | `prod`, `dev`, or `test` |
-| `DATABASE_URL` | yes | PostgreSQL connection URL |
+| `ENVIRONMENT` | yes | `prod`, `dev`, or `test`. Controls log level: `prod` → INFO, `dev`/`test` → DEBUG |
+| `DATABASE_URL` | yes | PostgreSQL connection URL, e.g. `postgres://user:pass@localhost:5432/oidc` |
 | `REDIS_URL` | yes | Redis connection URL, e.g. `redis://localhost:6379` |
-| `ENCRYPTION_KEY` | yes | 64-char hex string (32 bytes) used for AES-256-GCM encryption at rest — generate with `openssl rand -hex 32` |
+| `ENCRYPTION_KEY` | yes | 64-char hex string (32 bytes) for AES-256-GCM encryption at rest |
 | `ADMIN_API_KEY` | yes | Static key for client management endpoints — passed as `X-Admin-Key` header |
-| `SERVER_ADDR` | no | Listen address, default `:9090` |
+| `SERVER_ADDR` | no | Listen address, e.g. `:8080` or `0.0.0.0:8080`. Default: `:9090` |
 
-### Encryption key
+Minimal `.env` to get started:
 
 ```sh
-# TODO: DB_URL, REDIS_URL
-echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
-echo "ADMIN_API_KEY=$(openssl rand -hex 32)" >> .env
+ENVIRONMENT=dev
+DATABASE_URL=postgres://user:pass@localhost:5432/oidc
+REDIS_URL=redis://localhost:6379
+ENCRYPTION_KEY=$(openssl rand -hex 32)
+ADMIN_API_KEY=$(openssl rand -hex 32)
 ```
+
+### Server flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--jwt-cfg` | `./jwt_config.yml` | Path to the JWT configuration file |
 
 ### JWT
 

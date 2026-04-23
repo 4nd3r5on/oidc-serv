@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"log"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -68,14 +67,8 @@ func mustConnectRedis() *redis.Client {
 	return redis.NewClient(opts)
 }
 
-func initRepos(ctx context.Context, q *db.Queries, redisClient *redis.Client, encKey []byte, logger *slog.Logger) *Repos {
+func initRepos(q *db.Queries, redisClient *redis.Client, encKey []byte) *Repos {
 	clientRepo := inframemory.NewClientRepoCached(postgres.NewClientRepo(q, encKey))
-
-	go func() {
-		if err := clientRepo.Run(ctx); err != nil {
-			logger.Error("client cache stopped", "err", err)
-		}
-	}()
 
 	return &Repos{
 		Users:          postgres.NewUserRepo(q),
